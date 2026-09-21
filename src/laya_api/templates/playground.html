@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Playground — Laya API{% endblock %}
+{% block content %}
+<section class="pagehead">
+  <div>
+    <h1>Playground</h1>
+    <p>Signed-in requests hit the same engine as the API. Create a key when you want to call it from your own code.</p>
+  </div>
+</section>
+
+<div class="play">
+  <form id="eval-form" class="play-form">
+    <label>
+      Model
+      <select name="model" id="model">
+        {% for m in models %}
+          <option value="{{ m.name }}" {% if m.name == 'laya-latest' %}selected{% endif %}>{{ m.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      State
+      <textarea id="state" rows="8">{{ sample_state }}</textarea>
+    </label>
+    <label>
+      Questions (JSON object)
+      <textarea id="questions" rows="18">{{ sample_questions | tojson(indent=2) }}</textarea>
+    </label>
+    <button type="submit" class="btn" id="run">Evaluate</button>
+    <p class="hint" id="status"></p>
+  </form>
+  <pre class="result" id="result">{}</pre>
+</div>
+<script src="/static/playground.js"></script>
+{% endblock %}

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="/">Laya <span>API</span></a>
+    <nav>
+      {% if user %}
+        <a href="/keys" {% if request.url.path == '/keys' %}aria-current="page"{% endif %}>Keys</a>
+        <a href="/playground" {% if request.url.path == '/playground' %}aria-current="page"{% endif %}>Playground</a>
+        <a href="/docs">Docs</a>
+        <span class="who">{{ user.name or user.email }}</span>
+        <form method="post" action="/logout"><button type="submit" class="linkish">Sign out</button></form>
+      {% else %}
+        <a href="/docs">Docs</a>
+        {% if google_enabled %}
+          <a class="btn" href="/auth/google">Sign in with Google</a>
+        {% elif allow_dev_login %}
+          <a class="btn" href="/auth/dev">Dev sign in</a>
+        {% endif %}
+      {% endif %}
+    </nav>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  <footer>
+    Hosted System One decisions, backed by <a href="https://github.com/NandhaKishorM/laya">Laya</a>.
+    Contract mirrors TypeSafe Jev’s <code>POST /v1/systemone</code>.
+  </footer>
+</body>
+</html>

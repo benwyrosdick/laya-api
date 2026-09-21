@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: laya
+      POSTGRES_PASSWORD: laya
+      POSTGRES_DB: laya
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U laya -d laya"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-dev-insecure-change-me}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8000}
+      DATABASE_URL: postgresql+asyncpg://laya:laya@db:5432/laya
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      ALLOW_DEV_LOGIN: ${ALLOW_DEV_LOGIN:-true}
+      ENGINE: ${ENGINE:-stub}
+      LAYA_DEVICE: ${LAYA_DEVICE:-}
+      LAYA_PRELOAD: ${LAYA_PRELOAD:-true}
+      RATE_LIMIT_RPM: ${RATE_LIMIT_RPM:-60}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

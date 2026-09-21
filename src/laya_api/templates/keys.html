@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}API keys — Laya API{% endblock %}
+{% block content %}
+<section class="pagehead">
+  <div>
+    <h1>API keys</h1>
+    <p>Use a key as <code>Authorization: Bearer</code> on <code>/v1/systemone</code> and <code>/v1/models</code>. The secret is shown once.</p>
+  </div>
+  <form class="create-key" method="post" action="/keys">
+    <input type="text" name="name" placeholder="Key name" value="production" maxlength="80" required>
+    <button type="submit" class="btn">Create key</button>
+  </form>
+</section>
+
+{% if flash_key %}
+  <aside class="flash" role="status">
+    <p>New key <strong>{{ flash_key_name }}</strong> — copy it now. We cannot show it again.</p>
+    <code class="secret" id="new-key">{{ flash_key }}</code>
+    <button type="button" class="btn ghost" data-copy="#new-key">Copy</button>
+  </aside>
+{% endif %}
+
+<table class="keys">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Key</th>
+      <th>Created</th>
+      <th>Last used</th>
+      <th>Calls</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for key in keys %}
+      <tr class="{% if key.revoked %}revoked{% endif %}">
+        <td>{{ key.name }}</td>
+        <td><code>{{ key.prefix }}…</code></td>
+        <td>{{ key.created_at.strftime("%Y-%m-%d") if key.created_at else "—" }}</td>
+        <td>{{ key.last_used_at.strftime("%Y-%m-%d %H:%M") if key.last_used_at else "—" }}</td>
+        <td>{{ usage_counts.get(key.id, 0) }}</td>
+        <td>
+          {% if key.revoked %}
+            <span class="pill">Revoked</span>
+          {% else %}
+            <form method="post" action="/keys/{{ key.id }}/revoke" onsubmit="return confirm('Revoke this key? Existing clients will get 401.')">
+              <button type="submit" class="linkish danger">Revoke</button>
+            </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="empty">No keys yet. Create one to call the API.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+<script>
+  document.querySelectorAll("[data-copy]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const el = document.querySelector(btn.dataset.copy);
+      await navigator.clipboard.writeText(el.textContent.trim());
+      btn.textContent = "Copied";
+    });
+  });
+</script>
+{% endblock %}

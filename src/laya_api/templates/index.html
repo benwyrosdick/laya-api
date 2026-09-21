@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Laya API — hosted System One{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">System One, as a hosted API</p>
+  <h1>Typed decisions in one forward pass.</h1>
+  <p class="lede">
+    Sign in with Google, mint an API key, and send <code>state</code> plus
+    <code>choice</code> / <code>score</code> / <code>noul</code> questions.
+    The engine returns structured answers your code can branch on — the same shape as TypeSafe Jev, running Laya.
+  </p>
+  <div class="actions">
+    {% if user %}
+      <a class="btn" href="/keys">Manage API keys</a>
+      <a class="btn ghost" href="/playground">Open playground</a>
+    {% elif google_enabled %}
+      <a class="btn" href="/auth/google">Sign in with Google</a>
+      {% if allow_dev_login %}
+        <a class="btn ghost" href="/auth/dev">Dev sign in</a>
+      {% endif %}
+    {% elif allow_dev_login %}
+      <a class="btn" href="/auth/dev">Dev sign in</a>
+      <p class="hint">Google OAuth is not configured. Set <code>GOOGLE_CLIENT_ID</code> and <code>GOOGLE_CLIENT_SECRET</code> for production login.</p>
+    {% else %}
+      <p class="hint">This instance has no login method configured.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="grid">
+  <article>
+    <h2>1. Sign in</h2>
+    <p>Google OAuth creates your account. Locally you can use the dev login when <code>ALLOW_DEV_LOGIN=true</code>.</p>
+  </article>
+  <article>
+    <h2>2. Create a key</h2>
+    <p>Keys are shown once, stored as SHA-256 hashes in Postgres, and sent as <code>Authorization: Bearer</code>.</p>
+  </article>
+  <article>
+    <h2>3. Query the engine</h2>
+    <p><code>POST /v1/systemone</code> evaluates every question in one pass. Default model <code>laya-latest</code> routes to the right checkpoint.</p>
+  </article>
+</section>
+
+<section class="codeblock">
+  <header>
+    <span>Example</span>
+    <span class="muted">POST /v1/systemone</span>
+  </header>
+<pre>curl -s $PUBLIC_BASE_URL/v1/systemone \
+  -H "Authorization: Bearer $LAYA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "state": "Duplicate charge on invoice #4411. Refund today or we cancel.",
+    "model": "laya-latest",
+    "questions": {
+      "department": {
+        "type": "choice",
+        "instructions": "Which team should handle this?",
+        "criteria": {
+          "billing": "invoices, payments, refunds",
+          "technical": "bugs, outages, integrations",
+          "sales": "pricing, new contracts"
+        }
+      },
+      "is_urgent": {
+        "type": "noul",
+        "instructions": "Does this convey urgency?"
+      }
+    }
+  }'</pre>
+</section>
+{% endblock %}
