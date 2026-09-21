@@ -1,0 +1,24 @@
+README.md
+  h_4d9554034adb05 120
+src/laya_api/app_state.py
+  h_4d9554034adb05 1-4,20-21
+src/laya_api/engine.py
+  h_4d9554034adb05 4,11-12,50-51,191-192,214,216
+src/laya_api/main.py
+  h_4d9554034adb05 3,38,44,50-67,69-70,94-117
+src/laya_api/routes/v1.py
+  h_4d9554034adb05 87-102
+tests/test_validation.py
+  h_4d9554034adb05 64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8b1a01a402a6a0c5b7d31aff5fd5218978102bcf",
+  "prompts": {},
+  "humans": {
+    "h_4d9554034adb05": {
+      "author": "Ben Wyrosdick <ben.wyrosdick@gmail.com>"
+    }
+  }
+}
