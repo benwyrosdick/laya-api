@@ -87,6 +87,8 @@ ENGINE=laya LAYA_PRELOAD=true LAYA_DEVICE=cpu uvicorn laya_api.main:app
 
 The Kamal image uses **CPU** wheels. A GPU host would need a CUDA PyTorch image and Docker `--gpus`. Preload wants on the order of **8 GB RAM** for all three checkpoints. Inference is serialized in one process.
 
+Checkpoints live on the host at `/var/lib/laya-api/huggingface` and are mounted into each new container, so later deploys reuse the download. The image still bakes a copy and seeds an empty volume on first boot.
+
 ## Local development without Docker
 
 Postgres is the hosted store. Tests and a solo process can use SQLite:
