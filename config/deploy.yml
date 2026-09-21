@@ -18,6 +18,8 @@ proxy:
   app_port: 80
   healthcheck:
     path: /up
+    interval: 3
+    timeout: 5
 
 registry:
   server: ghcr.io
@@ -34,7 +36,9 @@ env:
     APP_ENV: production
     PUBLIC_BASE_URL: https://laya-api.benwyrosdick.com
     ALLOW_DEV_LOGIN: "false"
-    ENGINE: stub
+    ENGINE: laya
+    LAYA_PRELOAD: "true"
+    LAYA_DEVICE: cpu
     RATE_LIMIT_RPM: "60"
   secret:
     - SECRET_KEY
@@ -42,7 +46,7 @@ env:
     - GOOGLE_CLIENT_ID
     - GOOGLE_CLIENT_SECRET
 
-deploy_timeout: 60
+deploy_timeout: 600
 
 aliases:
   console: app exec --interactive --reuse "bash"

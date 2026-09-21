@@ -75,12 +75,17 @@ The answer objects follow Jev: `choice` includes `probabilities` and `confidence
 
 ## Real Laya engine
 
+The production image (`ENGINE=laya`) installs PyTorch and bakes the three Laya checkpoints from Hugging Face (`convaiinnovations/laya`) into the image at build time. Boot preloads them into RAM so language switches do not reload weights.
+
+Locally, without Docker:
+
 ```bash
 pip install -e '.[engine]'
-ENGINE=laya LAYA_PRELOAD=true LAYA_DEVICE=cuda uvicorn laya_api.main:app
+python -m laya_api.download_models
+ENGINE=laya LAYA_PRELOAD=true LAYA_DEVICE=cpu uvicorn laya_api.main:app
 ```
 
-First start downloads checkpoints from Hugging Face into the local hub cache. Preload keeps them resident so language switches do not reload weights. Inference is serialized on one process — this is a single-node API, not a model-parallel cluster.
+The Kamal image uses **CPU** wheels. A GPU host would need a CUDA PyTorch image and Docker `--gpus`. Preload wants on the order of **8 GB RAM** for all three checkpoints. Inference is serialized in one process.
 
 ## Local development without Docker
 
@@ -110,9 +115,9 @@ pytest
 
 ## Deploy with Kamal
 
-Production is deployed by GitHub Actions with Kamal to `house.wyrosdick.com`. Images go to GHCR as `ghcr.io/benwyrosdick/laya-api`. The app uses a Postgres instance you already host; there is no database accessory.
+Production is deployed by GitHub Actions with Kamal to `house.wyrosdick.com`. Images go to GHCR as `ghcr.io/benwyrosdick/laya-api` and include the real Laya checkpoints (the first build is slow and the image is large). The app uses a Postgres instance you already host; there is no database accessory.
 
-A push to `main` deploys. The first time, run the **Deploy** workflow with **setup** checked (Actions → Deploy → Run workflow) so Kamal can install Docker, boot `kamal-proxy`, and ship the app.
+A push to `main` deploys. The first time, run the **Deploy** workflow with **setup** checked (Actions → Deploy → Run workflow) so Kamal can install Docker, boot `kamal-proxy`, and ship the app. Give the container several minutes to load weights before `/up` succeeds.
 
 ### GitHub Actions values
 
@@ -128,6 +133,6 @@ Add these under **Settings → Secrets and variables → Actions**. Secrets are 
 | `KAMAL_SSH_USER` | variable | SSH user, default `root` |
 | `KAMAL_REGISTRY_PASSWORD` | secret | Optional GHCR token. Defaults to `GITHUB_TOKEN` |
 
-Google redirect URI: `https://house.wyrosdick.com/auth/google/callback`. Ports **80** and **443** must reach the house box for Let’s Encrypt.
+Google redirect URI: `https://laya-api.benwyrosdick.com/auth/google/callback`. Ports **80** and **443** must reach the house box for Let’s Encrypt.
 
 After the first image is published, either make the GHCR package public or set `KAMAL_REGISTRY_PASSWORD` to a PAT with `read:packages` so the server can pull.
