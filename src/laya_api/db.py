@@ -13,6 +13,21 @@ _engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker[AsyncSession] | None = None
 
 
+def normalize_database_url(url: str) -> str:
+    """Accept common Postgres URLs and force the asyncpg dialect SQLAlchemy needs."""
+    stripped = url.strip()
+    replacements = (
+        ("postgresql+psycopg2://", "postgresql+asyncpg://"),
+        ("postgres+psycopg2://", "postgresql+asyncpg://"),
+        ("postgresql://", "postgresql+asyncpg://"),
+        ("postgres://", "postgresql+asyncpg://"),
+    )
+    for prefix, async_prefix in replacements:
+        if stripped.startswith(prefix):
+            return async_prefix + stripped[len(prefix) :]
+    return stripped
+
+
 def _engine_kwargs(url: str) -> dict:
     kwargs: dict = {"pool_pre_ping": True}
     if url.startswith("sqlite"):
@@ -25,7 +40,8 @@ def _engine_kwargs(url: str) -> dict:
 
 def init_engine(database_url: str) -> AsyncEngine:
     global _engine, _session_factory
-    _engine = create_async_engine(database_url, **_engine_kwargs(database_url))
+    url = normalize_database_url(database_url)
+    _engine = create_async_engine(url, **_engine_kwargs(url))
     _session_factory = async_sessionmaker(_engine, expire_on_commit=False)
     return _engine
 

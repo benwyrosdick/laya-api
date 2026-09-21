@@ -127,7 +127,7 @@ Add these under **Settings → Secrets and variables → Actions**. Secrets are 
 | --- | --- | --- |
 | `SSH_PRIVATE_KEY` | secret | Private key that can SSH to `house.wyrosdick.com:2222` |
 | `SECRET_KEY` | secret | Session cookie signing key |
-| `DATABASE_URL` | secret | SQLAlchemy URL the **container** can reach, e.g. `postgresql+asyncpg://user:pass@host.docker.internal:5432/laya` |
+| `DATABASE_URL` | secret | Postgres URL the **container** can reach, e.g. `postgresql://user:pass@host.docker.internal:5432/laya` (plain `postgresql://` is rewritten to asyncpg) |
 | `GOOGLE_CLIENT_ID` | secret or variable | Google OAuth client |
 | `GOOGLE_CLIENT_SECRET` | secret | Google OAuth secret |
 | `KAMAL_SSH_USER` | variable | SSH user, default `root` |
