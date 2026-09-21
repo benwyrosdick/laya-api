@@ -117,7 +117,7 @@ pytest
 
 Production is deployed by GitHub Actions with Kamal to `house.wyrosdick.com`. Images go to GHCR as `ghcr.io/benwyrosdick/laya-api` and include the real Laya checkpoints (the first build is slow and the image is large). The app uses a Postgres instance you already host; there is no database accessory.
 
-A push to `main` deploys. The first time, run the **Deploy** workflow with **setup** checked (Actions → Deploy → Run workflow) so Kamal can install Docker, boot `kamal-proxy`, and ship the app. Give the container several minutes to load weights before `/up` succeeds.
+A push to `main` deploys. The first time, run the **Deploy** workflow with **setup** checked (Actions → Deploy → Run workflow) so Kamal can install Docker, boot `kamal-proxy`, and ship the app. `/up` becomes healthy as soon as the process and database are up so Kamal can finish. Checkpoints then load in the background (several minutes on CPU). `/ready` is 503 until they are resident; `POST /v1/systemone` returns 529 until then. `docker logs -f` on the `laya-api-web-*` container shows load progress.
 
 ### GitHub Actions values
 

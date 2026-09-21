@@ -84,6 +84,22 @@ async def run_system_one(
     api_key_id: str | None,
     source: str,
 ) -> SystemOneResponse:
+    context = ctx(request)
+    if context.engine_error:
+        raise HTTPException(
+            status_code=503,
+            detail={"error": "engine_error", "message": "The decision engine failed to load."},
+        )
+    if not context.engine_ready.is_set():
+        raise HTTPException(
+            status_code=529,
+            detail={
+                "error": "overloaded",
+                "message": "The decision engine is still loading checkpoints. Retry shortly.",
+            },
+            headers={"Retry-After": "30"},
+        )
+
     try:
         card = resolve_model(body.model)
     except UnknownModelError as exc:

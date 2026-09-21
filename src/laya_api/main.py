@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -34,19 +35,39 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         init_engine(settings.database_url)
         await create_schema()
         engine = build_engine(settings.engine, settings.laya_device, settings.laya_preload)
-        await engine.startup()
-        app.state.ctx = AppContext(
+        context = AppContext(
             settings=settings,
             sessions=get_session_factory(),
             engine=engine,
             limiter=RateLimiter(settings.rate_limit_rpm),
         )
+        app.state.ctx = context
         app.state.oauth = build_oauth(settings)
         if settings.secret_key == "dev-insecure-change-me":
             logger.warning("SECRET_KEY is the development default. Set a real secret before hosting this.")
         if settings.allow_dev_login:
             logger.warning("ALLOW_DEV_LOGIN is enabled. Turn this off on any public host.")
+
+        load_task: asyncio.Task | None = None
+
+        async def load_engine() -> None:
+            try:
+                logger.info("Starting decision engine (%s)", settings.engine)
+                await engine.startup()
+                context.engine_ready.set()
+                logger.info("Decision engine ready")
+            except Exception as exc:
+                context.engine_error = str(exc)
+                logger.exception("Decision engine failed to load")
+
+        if engine.blocking_startup:
+            await load_engine()
+        else:
+            load_task = asyncio.create_task(load_engine())
+
         yield
+        if load_task is not None:
+            load_task.cancel()
         await dispose_engine()
 
     app = FastAPI(
@@ -70,8 +91,30 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/up")
     @app.get("/healthz")
-    async def healthz():
-        return {"ok": True, "version": __version__, "engine": settings.engine}
+    async def healthz(request: Request):
+        context = getattr(request.app.state, "ctx", None)
+        ready = bool(context and context.engine_ready.is_set())
+        return {
+            "ok": True,
+            "version": __version__,
+            "engine": settings.engine,
+            "engine_ready": ready,
+        }
+
+    @app.get("/ready")
+    async def ready(request: Request):
+        context = request.app.state.ctx
+        if context.engine_error:
+            return JSONResponse(
+                status_code=503,
+                content={"ok": False, "engine_ready": False, "error": context.engine_error},
+            )
+        if not context.engine_ready.is_set():
+            return JSONResponse(
+                status_code=503,
+                content={"ok": False, "engine_ready": False, "message": "Checkpoints are still loading."},
+            )
+        return {"ok": True, "engine_ready": True}
 
     @app.exception_handler(SignInRequired)
     async def sign_in_required(_request: Request, _exc: SignInRequired):

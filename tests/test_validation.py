@@ -61,6 +61,7 @@ def test_healthz(client: TestClient):
     assert response.status_code == 200
     assert response.json()["ok"] is True
     assert response.json()["engine"] == "stub"
+    assert response.json()["engine_ready"] is True
 
 
 def test_up_alias(client: TestClient):

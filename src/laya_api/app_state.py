@@ -1,4 +1,7 @@
-from dataclasses import dataclass
+from __future__ import annotations
+
+import asyncio
+from dataclasses import dataclass, field
 
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -14,6 +17,8 @@ class AppContext:
     sessions: async_sessionmaker[AsyncSession]
     engine: DecisionEngine
     limiter: RateLimiter
+    engine_ready: asyncio.Event = field(default_factory=asyncio.Event)
+    engine_error: str | None = None
 
 
 def ctx(request: Request) -> AppContext:

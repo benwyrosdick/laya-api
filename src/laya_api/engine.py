@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import math
 import re
 import threading
 from abc import ABC, abstractmethod
 from typing import Any
+
+logger = logging.getLogger("laya_api.engine")
 
 from laya_api.catalog import CHECKPOINT_TO_PUBLIC, ModelCard
 from laya_api.schemas import (
@@ -44,6 +47,8 @@ def _confidence(probs: list[float]) -> float:
 
 
 class DecisionEngine(ABC):
+    blocking_startup: bool = True
+
     @abstractmethod
     async def startup(self) -> None: ...
 
@@ -183,6 +188,8 @@ def _legend_label(value: Any) -> str:
 
 
 class LayaEngine(DecisionEngine):
+    blocking_startup = False
+
     def __init__(self, device: str | None, preload: bool) -> None:
         self.device = device or None
         self.preload = preload
@@ -204,7 +211,9 @@ class LayaEngine(DecisionEngine):
         kwargs: dict[str, Any] = {"preload": self.preload, "max_loaded": 3}
         if self.device:
             kwargs["device"] = self.device
+        logger.info("Loading Laya Router device=%s preload=%s (CPU can take several minutes)", self.device, self.preload)
         self._router = Router(**kwargs)
+        logger.info("Laya Router ready: %s", self._router)
 
     async def predict(self, state: Any, questions: dict[str, Any], card: ModelCard) -> SystemOneResponse:
         import asyncio
