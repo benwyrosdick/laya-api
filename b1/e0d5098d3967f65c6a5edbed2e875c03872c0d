@@ -1,0 +1,21 @@
+Dockerfile
+  s_99b0b4799b100f::t_e1379f943603fe 7-8,15,18-19,22,25,27
+docker/entrypoint.sh
+  s_99b0b4799b100f::t_36b9185174c101 1-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b1e0d5098d3967f65c6a5edbed2e875c03872c0d",
+  "prompts": {},
+  "sessions": {
+    "s_99b0b4799b100f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a0c1b3-e486-7a51-9a1f-791a79b7eb15",
+        "model": "unknown"
+      },
+      "human_author": "Ben Wyrosdick <ben.wyrosdick@gmail.com>"
+    }
+  }
+}
