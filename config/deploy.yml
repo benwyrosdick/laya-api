@@ -15,7 +15,7 @@ ssh:
 proxy:
   ssl: true
   host: laya-api.benwyrosdick.com
-  app_port: 80
+  app_port: 8000
   healthcheck:
     path: /up
     interval: 3

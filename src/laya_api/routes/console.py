@@ -8,6 +8,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, select
 
+from laya_api import __version__
 from laya_api.app_state import ctx
 from laya_api.catalog import listed_models
 from laya_api.models import ApiKey, UsageEvent, User
@@ -75,6 +76,7 @@ def _template(request: Request, name: str, **context):
         "app_name": settings.app_name,
         "google_enabled": settings.google_enabled,
         "allow_dev_login": settings.allow_dev_login,
+        "asset_version": __version__,
     }
     base.update(context)
     return TEMPLATES.TemplateResponse(request, name, base)

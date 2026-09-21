@@ -19,5 +19,5 @@ RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/wh
 # Bake the three Laya checkpoints into the image so boot does not hit Hugging Face.
 RUN python -m laya_api.download_models
 
-EXPOSE 80
-CMD ["uvicorn", "laya_api.main:app", "--host", "0.0.0.0", "--port", "80"]
+EXPOSE 8000
+CMD ["uvicorn", "laya_api.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -27,9 +27,11 @@
       <textarea id="questions" rows="18">{{ sample_questions | tojson(indent=2) }}</textarea>
     </label>
     <button type="submit" class="btn" id="run">Evaluate</button>
-    <p class="hint" id="status"></p>
+    <p class="hint" id="status" hidden></p>
   </form>
-  <pre class="result" id="result">{}</pre>
+  <div class="result-panel" id="result-panel">
+    <p class="result-empty">Run a question to see answers.</p>
+  </div>
 </div>
-<script src="/static/playground.js"></script>
+<script src="/static/playground.js?v={{ asset_version }}"></script>
 {% endblock %}

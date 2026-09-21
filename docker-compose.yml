@@ -18,8 +18,12 @@ services:
   api:
     build: .
     ports:
-      - "8000:80"
+      - "8000:8000"
+    command: ["uvicorn", "laya_api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    volumes:
+      - ./src:/app/src
     environment:
+      PYTHONPATH: /app/src
       SECRET_KEY: ${SECRET_KEY:-dev-insecure-change-me}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8000}
       DATABASE_URL: postgresql+asyncpg://laya:laya@db:5432/laya
