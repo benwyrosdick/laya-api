@@ -1,0 +1,22 @@
+src/laya_api/templates/playground.html
+  s_99b0b4799b100f::t_3b77f30e4d65df 32-34
+src/laya_api/static/playground.js
+  s_99b0b4799b100f::t_aca1a51c7f3065 3,5-26,30-31,36-37,47,59-61,63,65,68-217
+  s_99b0b4799b100f::t_d5385b89bdfc52 218-220
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f799f52e907114bd2d019f76154a3e758d0f752f",
+  "prompts": {},
+  "sessions": {
+    "s_99b0b4799b100f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a0c1b3-e486-7a51-9a1f-791a79b7eb15",
+        "model": "unknown"
+      },
+      "human_author": "Ben Wyrosdick <ben.wyrosdick@gmail.com>"
+    }
+  }
+}
