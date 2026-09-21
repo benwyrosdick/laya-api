@@ -1,0 +1,59 @@
+service: laya-api
+image: benwyrosdick/laya-api
+
+servers:
+  web:
+    - house.wyrosdick.com
+
+ssh:
+  user: <%= ENV.fetch("KAMAL_SSH_USER", "root") %>
+  port: 2222
+
+proxy:
+  ssl: true
+  host: house.wyrosdick.com
+  app_port: 8000
+  healthcheck:
+    path: /up
+
+registry:
+  server: ghcr.io
+  username:
+    - KAMAL_REGISTRY_USERNAME
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+builder:
+  arch: amd64
+
+env:
+  clear:
+    APP_ENV: production
+    PUBLIC_BASE_URL: https://house.wyrosdick.com
+    ALLOW_DEV_LOGIN: "false"
+    ENGINE: stub
+    RATE_LIMIT_RPM: "60"
+  secret:
+    - SECRET_KEY
+    - DATABASE_URL
+    - GOOGLE_CLIENT_ID
+    - GOOGLE_CLIENT_SECRET
+
+deploy_timeout: 60
+
+accessories:
+  postgres:
+    image: postgres:16
+    host: house.wyrosdick.com
+    env:
+      clear:
+        POSTGRES_USER: laya
+        POSTGRES_DB: laya
+      secret:
+        - POSTGRES_PASSWORD
+    directories:
+      - data:/var/lib/postgresql/data
+
+aliases:
+  console: app exec --interactive --reuse "bash"
+  logs: app logs

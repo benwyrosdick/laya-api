@@ -107,3 +107,27 @@ pytest
 | `LAYA_DEVICE` | Optional `cuda` / `cpu` / `mps` |
 | `LAYA_PRELOAD` | Load all checkpoints at boot |
 | `RATE_LIMIT_RPM` | Per-key sliding window (default 60) |
+
+## Deploy with Kamal
+
+Production is [house.wyrosdick.com](https://house.wyrosdick.com), deployed by GitHub Actions with Kamal. Images go to GHCR as `ghcr.io/benwyrosdick/laya-api`. Postgres runs as a Kamal accessory on the same host.
+
+A push to `main` deploys. The first time, run the **Deploy** workflow with **setup** checked (Actions → Deploy → Run workflow) so Kamal can install Docker, boot `kamal-proxy`, start Postgres, and ship the app.
+
+### GitHub Actions values
+
+Add these under **Settings → Secrets and variables → Actions**. Secrets are preferred for anything sensitive; the workflow also reads repository Variables of the same name if the secret is empty.
+
+| Name | Kind | Purpose |
+| --- | --- | --- |
+| `SSH_PRIVATE_KEY` | secret | Private key that can SSH to `house.wyrosdick.com:2222` |
+| `SECRET_KEY` | secret | Session cookie signing key |
+| `POSTGRES_PASSWORD` | secret | Postgres password (also used to build `DATABASE_URL`) |
+| `GOOGLE_CLIENT_ID` | secret or variable | Google OAuth client |
+| `GOOGLE_CLIENT_SECRET` | secret | Google OAuth secret |
+| `KAMAL_SSH_USER` | variable | SSH user, default `root` |
+| `KAMAL_REGISTRY_PASSWORD` | secret | Optional GHCR token. Defaults to `GITHUB_TOKEN` |
+
+Google redirect URI: `https://house.wyrosdick.com/auth/google/callback`. Ports **80** and **443** must reach the house box for Let’s Encrypt.
+
+After the first image is published, either make the GHCR package public or set `KAMAL_REGISTRY_PASSWORD` to a PAT with `read:packages` so the server can pull.

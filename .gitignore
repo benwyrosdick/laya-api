@@ -1,4 +1,5 @@
 .env
+.kamal/secrets-common
 .venv/
 venv/
 __pycache__/

@@ -1,0 +1,84 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      setup:
+        description: First-time server bootstrap (install Docker, boot proxy + Postgres, deploy)
+        type: boolean
+        default: false
+
+concurrency:
+  group: kamal-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      KAMAL_REGISTRY_USERNAME: ${{ github.repository_owner }}
+      KAMAL_REGISTRY_PASSWORD: ${{ secrets.KAMAL_REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
+      KAMAL_SSH_USER: ${{ vars.KAMAL_SSH_USER || 'root' }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY || vars.SSH_PRIVATE_KEY }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY || vars.SECRET_KEY }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || vars.POSTGRES_PASSWORD }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || vars.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET || vars.GOOGLE_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lowercase GHCR username
+        run: echo "KAMAL_REGISTRY_USERNAME=$(echo "$KAMAL_REGISTRY_USERNAME" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
+      - name: Require deploy secrets
+        run: |
+          missing=0
+          for name in SSH_PRIVATE_KEY SECRET_KEY POSTGRES_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "Missing $name. Add it under Settings → Secrets and variables → Actions."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Build DATABASE_URL
+        run: |
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import os, urllib.parse
+          password = urllib.parse.quote(os.environ["POSTGRES_PASSWORD"], safe="")
+          print(f"DATABASE_URL=postgresql+asyncpg://laya:{password}@laya-api-postgres:5432/laya")
+          PY
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: false
+
+      - name: Install Kamal
+        run: gem install kamal --no-document
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ env.SSH_PRIVATE_KEY }}
+
+      - name: Trust house.wyrosdick.com host key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan -p 2222 house.wyrosdick.com >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        run: |
+          if [ "${{ github.event.inputs.setup }}" = "true" ]; then
+            kamal setup
+          else
+            kamal deploy
+          fi

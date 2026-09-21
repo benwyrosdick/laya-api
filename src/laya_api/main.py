@@ -68,6 +68,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(console_router)
     app.include_router(v1_router)
 
+    @app.get("/up")
     @app.get("/healthz")
     async def healthz():
         return {"ok": True, "version": __version__, "engine": settings.engine}
