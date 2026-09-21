@@ -1,0 +1,25 @@
+config/deploy.yml
+  s_99b0b4799b100f::t_12ccfb346be32c 1-59
+.kamal/secrets
+  s_99b0b4799b100f::t_0fa96fd9f051e5 1-9
+.github/workflows/deploy.yml
+  s_99b0b4799b100f::t_f40a69b086f7b4 1-35,39-56,71-84
+  s_99b0b4799b100f::t_8292ec15030046 36-37,57-70
+  s_99b0b4799b100f::t_fad46d1e34d288 38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c9bad3ff3ed398f64c67e0a5c2064f5d2f5eafe1",
+  "prompts": {},
+  "sessions": {
+    "s_99b0b4799b100f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a0c1b3-e486-7a51-9a1f-791a79b7eb15",
+        "model": "unknown"
+      },
+      "human_author": "Ben Wyrosdick <ben.wyrosdick@gmail.com>"
+    }
+  }
+}
