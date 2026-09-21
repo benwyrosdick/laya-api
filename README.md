@@ -110,9 +110,9 @@ pytest
 
 ## Deploy with Kamal
 
-Production is [house.wyrosdick.com](https://house.wyrosdick.com), deployed by GitHub Actions with Kamal. Images go to GHCR as `ghcr.io/benwyrosdick/laya-api`. Postgres runs as a Kamal accessory on the same host.
+Production is deployed by GitHub Actions with Kamal to `house.wyrosdick.com`. Images go to GHCR as `ghcr.io/benwyrosdick/laya-api`. The app uses a Postgres instance you already host; there is no database accessory.
 
-A push to `main` deploys. The first time, run the **Deploy** workflow with **setup** checked (Actions → Deploy → Run workflow) so Kamal can install Docker, boot `kamal-proxy`, start Postgres, and ship the app.
+A push to `main` deploys. The first time, run the **Deploy** workflow with **setup** checked (Actions → Deploy → Run workflow) so Kamal can install Docker, boot `kamal-proxy`, and ship the app.
 
 ### GitHub Actions values
 
@@ -122,7 +122,7 @@ Add these under **Settings → Secrets and variables → Actions**. Secrets are 
 | --- | --- | --- |
 | `SSH_PRIVATE_KEY` | secret | Private key that can SSH to `house.wyrosdick.com:2222` |
 | `SECRET_KEY` | secret | Session cookie signing key |
-| `POSTGRES_PASSWORD` | secret | Postgres password (also used to build `DATABASE_URL`) |
+| `DATABASE_URL` | secret | SQLAlchemy URL the **container** can reach, e.g. `postgresql+asyncpg://user:pass@host.docker.internal:5432/laya` |
 | `GOOGLE_CLIENT_ID` | secret or variable | Google OAuth client |
 | `GOOGLE_CLIENT_SECRET` | secret | Google OAuth secret |
 | `KAMAL_SSH_USER` | variable | SSH user, default `root` |

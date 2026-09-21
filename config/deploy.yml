@@ -3,7 +3,10 @@ image: benwyrosdick/laya-api
 
 servers:
   web:
-    - house.wyrosdick.com
+    hosts:
+      - house.wyrosdick.com
+    options:
+      add-host: host.docker.internal:host-gateway
 
 ssh:
   user: <%= ENV.fetch("KAMAL_SSH_USER", "root") %>
@@ -11,8 +14,8 @@ ssh:
 
 proxy:
   ssl: true
-  host: house.wyrosdick.com
-  app_port: 8000
+  host: laya-api.benwyrosdick.com
+  app_port: 80
   healthcheck:
     path: /up
 
@@ -29,7 +32,7 @@ builder:
 env:
   clear:
     APP_ENV: production
-    PUBLIC_BASE_URL: https://house.wyrosdick.com
+    PUBLIC_BASE_URL: https://laya-api.benwyrosdick.com
     ALLOW_DEV_LOGIN: "false"
     ENGINE: stub
     RATE_LIMIT_RPM: "60"
@@ -40,19 +43,6 @@ env:
     - GOOGLE_CLIENT_SECRET
 
 deploy_timeout: 60
-
-accessories:
-  postgres:
-    image: postgres:16
-    host: house.wyrosdick.com
-    env:
-      clear:
-        POSTGRES_USER: laya
-        POSTGRES_DB: laya
-      secret:
-        - POSTGRES_PASSWORD
-    directories:
-      - data:/var/lib/postgresql/data
 
 aliases:
   console: app exec --interactive --reuse "bash"

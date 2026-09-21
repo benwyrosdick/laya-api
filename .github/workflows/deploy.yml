@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       setup:
-        description: First-time server bootstrap (install Docker, boot proxy + Postgres, deploy)
+        description: First-time server bootstrap (install Docker, boot proxy, deploy)
         type: boolean
         default: false
 
@@ -27,7 +27,7 @@ jobs:
       KAMAL_SSH_USER: ${{ vars.KAMAL_SSH_USER || 'root' }}
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY || vars.SSH_PRIVATE_KEY }}
       SECRET_KEY: ${{ secrets.SECRET_KEY || vars.SECRET_KEY }}
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || vars.POSTGRES_PASSWORD }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || vars.GOOGLE_CLIENT_ID }}
       GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET || vars.GOOGLE_CLIENT_SECRET }}
     steps:
@@ -39,21 +39,13 @@ jobs:
       - name: Require deploy secrets
         run: |
           missing=0
-          for name in SSH_PRIVATE_KEY SECRET_KEY POSTGRES_PASSWORD; do
+          for name in SSH_PRIVATE_KEY SECRET_KEY DATABASE_URL; do
             if [ -z "${!name}" ]; then
               echo "Missing $name. Add it under Settings → Secrets and variables → Actions."
               missing=1
             fi
           done
           exit "$missing"
-
-      - name: Build DATABASE_URL
-        run: |
-          python3 - <<'PY' >> "$GITHUB_ENV"
-          import os, urllib.parse
-          password = urllib.parse.quote(os.environ["POSTGRES_PASSWORD"], safe="")
-          print(f"DATABASE_URL=postgresql+asyncpg://laya:{password}@laya-api-postgres:5432/laya")
-          PY
 
       - uses: ruby/setup-ruby@v1
         with:
