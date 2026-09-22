@@ -16,12 +16,17 @@ services:
       retries: 20
 
   api:
-    build: .
+    build:
+      context: .
+      args:
+        TORCH_INDEX_URL: ${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu128}
     ports:
       - "8000:8000"
+    gpus: all
     command: ["uvicorn", "laya_api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     volumes:
       - ./src:/app/src
+      - hf-cache:/data/huggingface
     environment:
       PYTHONPATH: /app/src
       SECRET_KEY: ${SECRET_KEY:-dev-insecure-change-me}
@@ -30,13 +35,17 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       ALLOW_DEV_LOGIN: ${ALLOW_DEV_LOGIN:-true}
-      ENGINE: ${ENGINE:-stub}
-      LAYA_DEVICE: ${LAYA_DEVICE:-}
+      ENGINE: ${ENGINE:-laya}
+      LAYA_DEVICE: ${LAYA_DEVICE:-cuda}
       LAYA_PRELOAD: ${LAYA_PRELOAD:-true}
       RATE_LIMIT_RPM: ${RATE_LIMIT_RPM:-60}
+      HF_HOME: /data/huggingface
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
   pgdata:
+  hf-cache:

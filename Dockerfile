@@ -1,6 +1,8 @@
 FROM python:3.12-slim
 
 WORKDIR /app
+# Kamal/CI leave this default (CPU). Local Compose overrides to cu128.
+ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
@@ -14,9 +16,8 @@ COPY pyproject.toml README.md ./
 COPY src ./src
 COPY docker/entrypoint.sh /entrypoint.sh
 
-# CPU wheels: a CUDA build is several GB and needs nvidia-container-toolkit on the host.
 RUN chmod +x /entrypoint.sh \
-    && pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir torch --index-url "${TORCH_INDEX_URL}" \
     && pip install --no-cache-dir '.[engine]'
 
 # Bake checkpoints into the image. At runtime they are copied into the Kamal volume.
