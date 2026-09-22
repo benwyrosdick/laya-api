@@ -1,0 +1,18 @@
+.env.example
+  h_4d9554034adb05 21-23
+Dockerfile
+  h_4d9554034adb05 4-5,20
+docker-compose.yml
+  h_4d9554034adb05 19-22,25,29,38-39,42-44,51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "428ad61c37c9b4f44e1f8b1a1de6bba269ae8e45",
+  "prompts": {},
+  "humans": {
+    "h_4d9554034adb05": {
+      "author": "Ben Wyrosdick <ben.wyrosdick@gmail.com>"
+    }
+  }
+}
