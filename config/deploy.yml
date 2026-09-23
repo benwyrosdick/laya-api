@@ -42,7 +42,7 @@ env:
     ENGINE: laya
     LAYA_PRELOAD: "true"
     LAYA_DEVICE: cpu
-    RATE_LIMIT_RPM: "60"
+    RATE_LIMIT_RPM: "180"
     HF_HOME: /data/huggingface
   secret:
     - SECRET_KEY

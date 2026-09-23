@@ -113,7 +113,7 @@ pytest
 | `ENGINE` | `stub` or `laya` |
 | `LAYA_DEVICE` | Optional `cuda` / `cpu` / `mps` |
 | `LAYA_PRELOAD` | Load all checkpoints at boot |
-| `RATE_LIMIT_RPM` | Per-key sliding window (default 60) |
+| `RATE_LIMIT_RPM` | Per-key sliding window (default 180) |
 
 ## Deploy with Kamal
 

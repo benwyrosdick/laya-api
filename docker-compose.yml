@@ -38,7 +38,7 @@ services:
       ENGINE: ${ENGINE:-laya}
       LAYA_DEVICE: ${LAYA_DEVICE:-cuda}
       LAYA_PRELOAD: ${LAYA_PRELOAD:-true}
-      RATE_LIMIT_RPM: ${RATE_LIMIT_RPM:-60}
+      RATE_LIMIT_RPM: ${RATE_LIMIT_RPM:-180}
       HF_HOME: /data/huggingface
       NVIDIA_VISIBLE_DEVICES: all
       NVIDIA_DRIVER_CAPABILITIES: compute,utility

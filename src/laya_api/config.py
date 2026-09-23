@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     laya_preload: bool = True
     default_model: str = "laya-latest"
 
-    rate_limit_rpm: int = 60
+    rate_limit_rpm: int = 180
     max_questions_per_request: int = 256
     max_choice_options: int = 255
     max_score_levels: int = 10
