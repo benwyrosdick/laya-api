@@ -1,0 +1,22 @@
+.env.example
+  h_4d9554034adb05 27
+README.md
+  h_4d9554034adb05 116
+config/deploy.yml
+  h_4d9554034adb05 45
+docker-compose.yml
+  h_4d9554034adb05 41
+src/laya_api/config.py
+  h_4d9554034adb05 23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6565e5dec2eb6f2f35e20c4617a666b6bcc5b588",
+  "prompts": {},
+  "humans": {
+    "h_4d9554034adb05": {
+      "author": "Ben Wyrosdick <ben.wyrosdick@gmail.com>"
+    }
+  }
+}
