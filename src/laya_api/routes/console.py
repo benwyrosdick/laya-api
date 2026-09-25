@@ -17,8 +17,8 @@ from laya_api.schemas import SystemOneRequest
 from laya_api.security import generate_api_key
 from laya_api.usage_chart import (
     axis_ticks,
-    build_hourly_series,
-    day_labels,
+    build_series,
+    chart_labels,
     format_total,
     nice_axis_max,
 )
@@ -151,27 +151,48 @@ async def revoke_key(request: Request, key_id: str):
 @router.get("/usage")
 async def usage_page(request: Request):
     user = await require_user(request)
+    grain = request.query_params.get("grain", "hour")
+    if grain not in {"hour", "day"}:
+        grain = "hour"
+    key_filter = (request.query_params.get("key") or "").strip()
     async with ctx(request).sessions() as session:
-        result = await session.execute(
-            select(UsageEvent.created_at, UsageEvent.input_tokens).where(UsageEvent.user_id == user.id)
+        keys_result = await session.execute(
+            select(ApiKey).where(ApiKey.user_id == user.id).order_by(ApiKey.created_at.desc())
         )
+        keys = list(keys_result.scalars())
+        known_ids = {key.id for key in keys}
+        if key_filter and key_filter != "playground" and key_filter not in known_ids:
+            key_filter = ""
+        stmt = select(UsageEvent.created_at, UsageEvent.input_tokens).where(UsageEvent.user_id == user.id)
+        if key_filter == "playground":
+            stmt = stmt.where(UsageEvent.api_key_id.is_(None))
+        elif key_filter:
+            stmt = stmt.where(UsageEvent.api_key_id == key_filter)
+        result = await session.execute(stmt)
         events = [(row[0], row[1]) for row in result.all()]
-    buckets = build_hourly_series(events)
+    buckets = build_series(events, grain=grain)
     total_requests = sum(bucket["requests"] for bucket in buckets)
     total_tokens = sum(bucket["tokens"] for bucket in buckets)
     token_max = nice_axis_max(max((bucket["tokens"] for bucket in buckets), default=0))
     request_max = nice_axis_max(max((bucket["requests"] for bucket in buckets), default=0))
+    stamp = "%b %d" if grain == "day" else "%b %d %H:00 UTC"
     for bucket in buckets:
         bucket["token_pct"] = (bucket["tokens"] / token_max) * 100 if token_max else 0
         bucket["request_pct"] = (bucket["requests"] / request_max) * 100 if request_max else 0
-        bucket["token_title"] = f"{bucket['start']:%b %d %H:00 UTC} · {bucket['tokens']:,} tokens"
-        bucket["request_title"] = f"{bucket['start']:%b %d %H:00 UTC} · {bucket['requests']:,} requests"
+        when = bucket["start"].strftime(stamp)
+        bucket["token_title"] = f"{when} · {bucket['tokens']:,} tokens"
+        bucket["request_title"] = f"{when} · {bucket['requests']:,} requests"
+    window = "7 days, one bar per hour" if grain == "hour" else "30 days, one bar per day"
     return _template(
         request,
         "usage.html",
         user=user,
+        keys=keys,
+        grain=grain,
+        key_filter=key_filter,
+        window=window,
         buckets=buckets,
-        labels=day_labels(buckets),
+        labels=chart_labels(buckets, grain=grain),
         token_ticks=list(reversed(axis_ticks(token_max))),
         request_ticks=list(reversed(axis_ticks(request_max))),
         total_tokens=format_total(total_tokens),

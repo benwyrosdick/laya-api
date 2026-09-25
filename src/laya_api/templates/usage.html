@@ -4,8 +4,27 @@
 <section class="pagehead">
   <div>
     <h1>Usage</h1>
-    <p>Requests and input tokens over the last 7 days, one bar per hour (UTC).</p>
+    <p>Requests and input tokens, UTC. {{ window }}.</p>
   </div>
+  <form class="usage-filters" method="get" action="/usage">
+    <div class="usage-toggle" role="group" aria-label="Chart grain">
+      <a class="{% if grain == 'hour' %}on{% endif %}" href="/usage?grain=hour&key={{ key_filter }}">Hourly</a>
+      <a class="{% if grain == 'day' %}on{% endif %}" href="/usage?grain=day&key={{ key_filter }}">Daily</a>
+    </div>
+    <label>
+      Key
+      <select name="key" onchange="this.form.submit()">
+        <option value="" {% if not key_filter %}selected{% endif %}>All keys</option>
+        <option value="playground" {% if key_filter == 'playground' %}selected{% endif %}>Playground</option>
+        {% for key in keys %}
+          <option value="{{ key.id }}" {% if key_filter == key.id %}selected{% endif %}>
+            {{ key.name }} · {{ key.prefix }}…{% if key.revoked %} (revoked){% endif %}
+          </option>
+        {% endfor %}
+      </select>
+    </label>
+    <input type="hidden" name="grain" value="{{ grain }}">
+  </form>
 </section>
 
 <section class="usage-card">

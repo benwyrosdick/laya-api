@@ -14,29 +14,54 @@ def hour_floor(value: datetime) -> datetime:
     return value.replace(minute=0, second=0, microsecond=0)
 
 
-def build_hourly_series(
+def day_floor(value: datetime) -> datetime:
+    return hour_floor(value).replace(hour=0)
+
+
+def build_series(
     events: list[tuple[datetime, int]],
     *,
+    grain: str = "hour",
     now: datetime | None = None,
-    days: int = 7,
+    days: int | None = None,
 ) -> list[dict]:
+    if grain not in {"hour", "day"}:
+        grain = "hour"
+    if days is None:
+        days = 7 if grain == "hour" else 30
     end = hour_floor(now or datetime.now(timezone.utc))
-    start = end - timedelta(hours=days * 24 - 1)
+    if grain == "day":
+        end = end.replace(hour=0)
+        start = end - timedelta(days=days - 1)
+        step = timedelta(days=1)
+        floor = day_floor
+    else:
+        start = end - timedelta(hours=days * 24 - 1)
+        step = timedelta(hours=1)
+        floor = hour_floor
     buckets: list[dict] = []
     index: dict[datetime, int] = {}
     cursor = start
     while cursor <= end:
         index[cursor] = len(buckets)
         buckets.append({"start": cursor, "requests": 0, "tokens": 0})
-        cursor += timedelta(hours=1)
+        cursor += step
     for created_at, tokens in events:
-        key = hour_floor(created_at)
-        slot = index.get(key)
+        slot = index.get(floor(created_at))
         if slot is None:
             continue
         buckets[slot]["requests"] += 1
         buckets[slot]["tokens"] += int(tokens or 0)
     return buckets
+
+
+def build_hourly_series(
+    events: list[tuple[datetime, int]],
+    *,
+    now: datetime | None = None,
+    days: int = 7,
+) -> list[dict]:
+    return build_series(events, grain="hour", now=now, days=days)
 
 
 def nice_axis_max(peak: int) -> int:
@@ -74,15 +99,21 @@ def format_total(value: int) -> str:
     return f"{value:,}"
 
 
-def day_labels(buckets: list[dict]) -> list[dict]:
+def chart_labels(buckets: list[dict], *, grain: str) -> list[dict]:
     if not buckets:
         return []
     last = len(buckets) - 1
     labels = []
     for i, bucket in enumerate(buckets):
         start: datetime = bucket["start"]
-        if start.hour != 0 and i != 0:
+        if grain == "hour" and start.hour != 0 and i != 0:
+            continue
+        if grain == "day" and i % 5 != 0 and i != last:
             continue
         left = 0 if last == 0 else (i / last) * 100
-        labels.append({"left": round(left, 3), "label": f"{start.strftime('%b')} {start.day}, 12 AM"})
+        if grain == "day":
+            text = f"{start.strftime('%b')} {start.day}"
+        else:
+            text = f"{start.strftime('%b')} {start.day}, 12 AM"
+        labels.append({"left": round(left, 3), "label": text})
     return labels
