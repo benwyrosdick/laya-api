@@ -1,0 +1,30 @@
+{% set ticks = ticks if ticks is defined else token_ticks %}
+{% set pct_attr = pct_attr if pct_attr is defined else 'token_pct' %}
+{% set title_attr = title_attr if title_attr is defined else 'token_title' %}
+{% set bar_class = bar_class if bar_class is defined else 'tokens' %}
+<div class="usage-chart">
+  <div class="usage-y">
+    {% for tick in ticks %}
+      <span>{{ tick.label }}</span>
+    {% endfor %}
+  </div>
+  <div class="usage-plot">
+    <div class="usage-grid">
+      {% for tick in ticks %}
+        <span></span>
+      {% endfor %}
+    </div>
+    <div class="usage-bars">
+      {% for bucket in buckets %}
+        <div class="usage-col" title="{{ bucket[title_attr] }}">
+          <div class="usage-bar {{ bar_class }}" style="height: {{ bucket[pct_attr] }}%"></div>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="usage-x">
+      {% for label in labels %}
+        <span style="left: {{ label.left }}%">{{ label.label }}</span>
+      {% endfor %}
+    </div>
+  </div>
+</div>

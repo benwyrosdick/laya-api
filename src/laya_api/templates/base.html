@@ -12,6 +12,7 @@
     <nav>
       {% if user %}
         <a href="/keys" {% if request.url.path == '/keys' %}aria-current="page"{% endif %}>Keys</a>
+        <a href="/usage" {% if request.url.path == '/usage' %}aria-current="page"{% endif %}>Usage</a>
         <a href="/playground" {% if request.url.path == '/playground' %}aria-current="page"{% endif %}>Playground</a>
         <a href="/docs">Docs</a>
         <span class="who">{{ user.name or user.email }}</span>

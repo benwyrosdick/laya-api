@@ -15,6 +15,13 @@ from laya_api.models import ApiKey, UsageEvent, User
 from laya_api.routes.v1 import run_system_one
 from laya_api.schemas import SystemOneRequest
 from laya_api.security import generate_api_key
+from laya_api.usage_chart import (
+    axis_ticks,
+    build_hourly_series,
+    day_labels,
+    format_total,
+    nice_axis_max,
+)
 
 TEMPLATES = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
 
@@ -139,6 +146,37 @@ async def revoke_key(request: Request, key_id: str):
             key.revoked_at = datetime.now(timezone.utc)
             await session.commit()
     return RedirectResponse("/keys", status_code=303)
+
+
+@router.get("/usage")
+async def usage_page(request: Request):
+    user = await require_user(request)
+    async with ctx(request).sessions() as session:
+        result = await session.execute(
+            select(UsageEvent.created_at, UsageEvent.input_tokens).where(UsageEvent.user_id == user.id)
+        )
+        events = [(row[0], row[1]) for row in result.all()]
+    buckets = build_hourly_series(events)
+    total_requests = sum(bucket["requests"] for bucket in buckets)
+    total_tokens = sum(bucket["tokens"] for bucket in buckets)
+    token_max = nice_axis_max(max((bucket["tokens"] for bucket in buckets), default=0))
+    request_max = nice_axis_max(max((bucket["requests"] for bucket in buckets), default=0))
+    for bucket in buckets:
+        bucket["token_pct"] = (bucket["tokens"] / token_max) * 100 if token_max else 0
+        bucket["request_pct"] = (bucket["requests"] / request_max) * 100 if request_max else 0
+        bucket["token_title"] = f"{bucket['start']:%b %d %H:00 UTC} · {bucket['tokens']:,} tokens"
+        bucket["request_title"] = f"{bucket['start']:%b %d %H:00 UTC} · {bucket['requests']:,} requests"
+    return _template(
+        request,
+        "usage.html",
+        user=user,
+        buckets=buckets,
+        labels=day_labels(buckets),
+        token_ticks=list(reversed(axis_ticks(token_max))),
+        request_ticks=list(reversed(axis_ticks(request_max))),
+        total_tokens=format_total(total_tokens),
+        total_requests=format_total(total_requests),
+    )
 
 
 @router.get("/playground")

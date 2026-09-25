@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Usage — Laya API{% endblock %}
+{% block content %}
+<section class="pagehead">
+  <div>
+    <h1>Usage</h1>
+    <p>Requests and input tokens over the last 7 days, one bar per hour (UTC).</p>
+  </div>
+</section>
+
+<section class="usage-card">
+  <header>
+    <h2>Tokens</h2>
+    <strong>{{ total_tokens }}</strong>
+  </header>
+  {% with ticks=token_ticks, pct_attr='token_pct', title_attr='token_title' %}
+    {% include "usage_chart.html" %}
+  {% endwith %}
+</section>
+
+<section class="usage-card">
+  <header>
+    <h2>Requests</h2>
+    <strong>{{ total_requests }}</strong>
+  </header>
+  {% with ticks=request_ticks, pct_attr='request_pct', title_attr='request_title' %}
+    {% include "usage_chart.html" %}
+  {% endwith %}
+</section>
+{% endblock %}

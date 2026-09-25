@@ -359,6 +359,96 @@ table.keys tr.revoked td { color: var(--muted); }
 .result-error { padding: 0.4rem 0 0.8rem; }
 .error-title { color: var(--danger); font-weight: 650; margin: 0 0 0.3rem; }
 
+.usage-card {
+  background: #121212;
+  color: var(--text);
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 1rem 1.05rem 0.55rem;
+  margin: 0 0 1.25rem;
+}
+.usage-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid #2e2e2e;
+}
+.usage-card h2 {
+  margin: 0;
+  color: var(--accent);
+  font-size: 0.95rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.usage-card strong {
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+.usage-chart {
+  display: grid;
+  grid-template-columns: 2.8rem 1fr;
+  gap: 0.45rem;
+}
+.usage-y {
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #8d877c;
+  font-size: 0.72rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.usage-plot { position: relative; height: 214px; }
+.usage-grid {
+  position: absolute;
+  inset: 0 0 34px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.usage-grid span {
+  border-top: 1px dotted #3a3a3a;
+  height: 0;
+}
+.usage-bars {
+  position: absolute;
+  inset: 0 0 34px 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+.usage-col {
+  flex: 1 1 0;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  min-width: 0;
+}
+.usage-bar {
+  width: 100%;
+  min-height: 0;
+  background: var(--accent);
+  border-radius: 1px 1px 0 0;
+}
+.usage-x { position: absolute; left: 0; right: 0; bottom: 0; height: 28px; }
+.usage-x span {
+  position: absolute;
+  top: 6px;
+  transform: translateX(-10%);
+  color: #8d877c;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
 @media (max-width: 860px) {
   .play { grid-template-columns: 1fr; }
   .hero h1 { max-width: none; }
