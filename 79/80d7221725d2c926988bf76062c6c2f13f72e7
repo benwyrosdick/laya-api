@@ -1,0 +1,26 @@
+src/laya_api/templates/usage.html
+  s_99b0b4799b100f::t_16a1ff6afba345 1-28
+  s_99b0b4799b100f::t_ddc349284d55ea 29-30
+tests/test_usage.py
+  s_99b0b4799b100f::t_fb2b24a796bd49 1-67
+src/laya_api/usage_chart.py
+  s_99b0b4799b100f::t_2e8d9ff1d8ec98 1-88
+src/laya_api/templates/usage_chart.html
+  s_99b0b4799b100f::t_e311fe0498c07e 1-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7980d7221725d2c926988bf76062c6c2f13f72e7",
+  "prompts": {},
+  "sessions": {
+    "s_99b0b4799b100f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a0c1b3-e486-7a51-9a1f-791a79b7eb15",
+        "model": "unknown"
+      },
+      "human_author": "Ben Wyrosdick <ben.wyrosdick@gmail.com>"
+    }
+  }
+}
