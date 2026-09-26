@@ -1,0 +1,18 @@
+src/laya_api/routes/console.py
+  h_4d9554034adb05 9,158-159,168-177,183-186,207,210
+src/laya_api/templates/usage.html
+  h_4d9554034adb05 11-12,14-22
+tests/test_usage.py
+  h_4d9554034adb05 129-136
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "43beb6ca771741c02038661491e6e9025fcb614a",
+  "prompts": {},
+  "humans": {
+    "h_4d9554034adb05": {
+      "author": "Ben Wyrosdick <ben.wyrosdick@gmail.com>"
+    }
+  }
+}
