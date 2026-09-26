@@ -13,9 +13,16 @@
     <label>
       Model
       <select name="model" id="model">
-        {% for m in models %}
-          <option value="{{ m.name }}" {% if m.name == 'laya-latest' %}selected{% endif %}>{{ m.name }}</option>
-        {% endfor %}
+        <optgroup label="Laya">
+          {% for m in models %}
+            <option value="{{ m.name }}" {% if m.name == 'laya-latest' %}selected{% endif %}>{{ m.name }}</option>
+          {% endfor %}
+        </optgroup>
+        <optgroup label="Lev">
+          {% for m in lev_models %}
+            <option value="{{ m.name }}">{{ m.name }}</option>
+          {% endfor %}
+        </optgroup>
       </select>
     </label>
     <label>

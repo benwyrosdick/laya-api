@@ -73,6 +73,18 @@ Aliases such as `router`, `english`, and `multilingual` are accepted. The respon
 
 The answer objects follow Jev: `choice` includes `probabilities` and `confidence`; `score` includes `legend`; `noul` is a probability in `[0, 1]`. Usage reports `input_tokens` / `output_tokens` (output is always 0 — Laya is not generative).
 
+### Runtimes
+
+Laya and [Lev](https://github.com/franckverrot/lev) are separate engines, so they have separate paths. `/v1/...` stays the Laya alias.
+
+| | Laya | Lev |
+| --- | --- | --- |
+| Evaluate | `POST /laya/v1/systemone` or `POST /v1/systemone` | `POST /lev/v1/systemone` |
+| Models | `GET /laya/v1/models` | `GET /lev/v1/models` |
+| Default model | `laya-latest` | `lev-latest` |
+
+Lev is the LFM2.5-350M decision model (`franckverrot/lev-350m`). Same question types. It does not return a `routing` object. Load it with `ENGINES=laya,lev` (or `ENGINE=lev`) and `pip install -e '.[lev]'`. Production Kamal stays Laya-only unless you set that.
+
 ## Real Laya engine
 
 The production image (`ENGINE=laya`) installs PyTorch and bakes the three Laya checkpoints from Hugging Face (`convaiinnovations/laya`) into the image at build time. Boot preloads them into RAM so language switches do not reload weights.

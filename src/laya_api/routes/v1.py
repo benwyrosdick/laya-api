@@ -13,7 +13,11 @@ from laya_api.models import ApiKey, UsageEvent
 from laya_api.schemas import ModelListItem, ModelListResponse, SystemOneRequest, SystemOneResponse
 from laya_api.security import extract_bearer, hash_api_key
 
-router = APIRouter(prefix="/v1", tags=["v1"])
+def _requested_model(body: SystemOneRequest, runtime: str) -> str:
+    name = (body.model or "").strip()
+    if runtime == "lev" and name in {"", "laya-latest"}:
+        return "lev-latest"
+    return name or "laya-latest"
 
 
 def _unauthorized() -> HTTPException:
@@ -76,6 +80,14 @@ async def record_usage(
         await session.commit()
 
 
+def _runtime_state(request: Request, runtime: str):
+    context = ctx(request)
+    engines = getattr(context, "engines", None) or {"laya": context.engine}
+    ready = getattr(context, "runtime_ready", None) or {"laya": context.engine_ready}
+    errors = getattr(context, "runtime_error", None) or {"laya": context.engine_error}
+    return engines[runtime], ready[runtime], errors.get(runtime)
+
+
 async def run_system_one(
     request: Request,
     body: SystemOneRequest,
@@ -83,25 +95,27 @@ async def run_system_one(
     user_id: str,
     api_key_id: str | None,
     source: str,
+    runtime: str = "laya",
 ) -> SystemOneResponse:
-    context = ctx(request)
-    if context.engine_error:
+    engine, ready, error = _runtime_state(request, runtime)
+    if error:
         raise HTTPException(
             status_code=503,
-            detail={"error": "engine_error", "message": "The decision engine failed to load."},
+            detail={"error": "engine_error", "message": f"The {runtime} engine failed to load."},
         )
-    if not context.engine_ready.is_set():
+    if not ready.is_set():
         raise HTTPException(
             status_code=529,
             detail={
                 "error": "overloaded",
-                "message": "The decision engine is still loading checkpoints. Retry shortly.",
+                "message": f"The {runtime} engine is still loading checkpoints. Retry shortly.",
             },
             headers={"Retry-After": "30"},
         )
 
+    model_name = _requested_model(body, runtime)
     try:
-        card = resolve_model(body.model)
+        card = resolve_model(model_name, runtime)
     except UnknownModelError as exc:
         raise HTTPException(
             status_code=422,
@@ -111,7 +125,7 @@ async def run_system_one(
     questions = {qid: q.model_dump() for qid, q in body.questions.items()}
     started = time.perf_counter()
     try:
-        result = await ctx(request).engine.predict(body.state, questions, card)
+        result = await engine.predict(body.state, questions, card)
     except ValueError as exc:
         raise HTTPException(
             status_code=422,
@@ -124,7 +138,7 @@ async def run_system_one(
             user_id=user_id,
             api_key_id=api_key_id,
             source=source,
-            requested_model=body.model,
+            requested_model=model_name,
             resolved_model=card.name,
             input_tokens=0,
             question_count=len(questions),
@@ -142,7 +156,7 @@ async def run_system_one(
         user_id=user_id,
         api_key_id=api_key_id,
         source=source,
-        requested_model=body.model,
+        requested_model=model_name,
         resolved_model=result.model,
         input_tokens=result.usage.input_tokens,
         question_count=len(questions),
@@ -152,37 +166,46 @@ async def run_system_one(
     return result
 
 
-@router.get("/models", response_model=ModelListResponse)
-async def list_models(request: Request, authorization: str | None = Header(default=None)):
-    await authenticate_key(request, authorization)
-    return ModelListResponse(
-        models=[
-            ModelListItem(name=m.name, description=m.description, release_date=m.release_date)
-            for m in listed_models()
-        ]
-    )
+def build_runtime_router(prefix: str, runtime: str) -> APIRouter:
+    router = APIRouter(prefix=prefix, tags=[runtime])
+
+    @router.get("/models", response_model=ModelListResponse)
+    async def list_models(request: Request, authorization: str | None = Header(default=None)):
+        await authenticate_key(request, authorization)
+        return ModelListResponse(
+            models=[
+                ModelListItem(name=m.name, description=m.description, release_date=m.release_date)
+                for m in listed_models(runtime)
+            ]
+        )
+
+    @router.post("/systemone", response_model=SystemOneResponse)
+    async def system_one(
+        request: Request,
+        body: SystemOneRequest,
+        authorization: str | None = Header(default=None),
+    ):
+        key = await authenticate_key(request, authorization)
+        return await run_system_one(
+            request,
+            body,
+            user_id=key.user_id,
+            api_key_id=key.id,
+            source="api",
+            runtime=runtime,
+        )
+
+    @router.api_route("/systemone", methods=["GET", "PUT", "PATCH", "DELETE"])
+    async def system_one_wrong_method():
+        return JSONResponse(
+            status_code=405,
+            content={"error": "method_not_allowed", "message": f"Use POST {prefix}/systemone."},
+            headers={"Allow": "POST"},
+        )
+
+    return router
 
 
-@router.post("/systemone", response_model=SystemOneResponse)
-async def system_one(
-    request: Request,
-    body: SystemOneRequest,
-    authorization: str | None = Header(default=None),
-):
-    key = await authenticate_key(request, authorization)
-    return await run_system_one(
-        request,
-        body,
-        user_id=key.user_id,
-        api_key_id=key.id,
-        source="api",
-    )
-
-
-@router.api_route("/systemone", methods=["GET", "PUT", "PATCH", "DELETE"])
-async def system_one_wrong_method():
-    return JSONResponse(
-        status_code=405,
-        content={"error": "method_not_allowed", "message": "Use POST /v1/systemone."},
-        headers={"Allow": "POST"},
-    )
+router = build_runtime_router("/v1", "laya")
+laya_router = build_runtime_router("/laya/v1", "laya")
+lev_router = build_runtime_router("/lev/v1", "lev")

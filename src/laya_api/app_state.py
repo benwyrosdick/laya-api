@@ -19,6 +19,9 @@ class AppContext:
     limiter: RateLimiter
     engine_ready: asyncio.Event = field(default_factory=asyncio.Event)
     engine_error: str | None = None
+    engines: dict[str, DecisionEngine] = field(default_factory=dict)
+    runtime_ready: dict[str, asyncio.Event] = field(default_factory=dict)
+    runtime_error: dict[str, str | None] = field(default_factory=dict)
 
 
 def ctx(request: Request) -> AppContext:

@@ -10,7 +10,7 @@ from sqlalchemy import func, select
 
 from laya_api import __version__
 from laya_api.app_state import ctx
-from laya_api.catalog import listed_models
+from laya_api.catalog import listed_models, resolve_model, UnknownModelError
 from laya_api.models import ApiKey, UsageEvent, User
 from laya_api.routes.v1 import run_system_one
 from laya_api.schemas import SystemOneRequest
@@ -207,7 +207,8 @@ async def playground(request: Request):
         request,
         "playground.html",
         user=user,
-        models=listed_models(),
+        models=listed_models("laya"),
+        lev_models=listed_models("lev"),
         sample_state=SAMPLE_STATE,
         sample_questions=SAMPLE_QUESTIONS,
     )
@@ -216,10 +217,17 @@ async def playground(request: Request):
 @router.post("/console/evaluate")
 async def console_evaluate(request: Request, body: SystemOneRequest):
     user = await require_user(request, json_api=True)
+    runtime = "laya"
+    try:
+        resolve_model(body.model or "", "lev")
+        runtime = "lev"
+    except UnknownModelError:
+        runtime = "laya"
     return await run_system_one(
         request,
         body,
         user_id=user.id,
         api_key_id=None,
         source="playground",
+        runtime=runtime,
     )

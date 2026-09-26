@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     allow_dev_login: bool = False
 
     engine: str = "stub"
+    # Comma-separated real runtimes to load: "laya", "lev", or "laya,lev".
+    # Empty follows `engine`. "stub" loads neither.
+    engines: str = ""
+    lev_run: str = "franckverrot/lev-350m"
     laya_device: str | None = None
     laya_preload: bool = True
     default_model: str = "laya-latest"
@@ -38,3 +42,17 @@ class Settings(BaseSettings):
     @property
     def google_redirect_uri(self) -> str:
         return f"{self.public_base_url.rstrip('/')}/auth/google/callback"
+
+    def real_runtimes(self) -> set[str]:
+        raw = (self.engines or "").strip().lower()
+        if not raw:
+            if self.engine in {"stub", "heuristic", "fake"}:
+                return set()
+            if self.engine in {"both", "all"}:
+                return {"laya", "lev"}
+            return {self.engine.strip().lower()}
+        if raw in {"stub", "none"}:
+            return set()
+        if raw in {"both", "all"}:
+            return {"laya", "lev"}
+        return {part.strip() for part in raw.split(",") if part.strip()}

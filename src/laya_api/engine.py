@@ -75,6 +75,14 @@ class StubEngine(DecisionEngine):
 
     async def predict(self, state: Any, questions: dict[str, Any], card: ModelCard) -> SystemOneResponse:
         text = flatten_state(state)
+        if card.runtime == "lev":
+            answers = {qid: self._answer(text, q if isinstance(q, dict) else q.model_dump()) for qid, q in questions.items()}
+            return SystemOneResponse(
+                model=card.name,
+                answers=answers,
+                usage=Usage(input_tokens=max(1, len(text.split())), output_tokens=0),
+                routing=None,
+            )
         resolved_checkpoint = card.checkpoint or self._route_checkpoint(text)
         answers: dict[str, Answer] = {}
         for qid, question in questions.items():
@@ -280,9 +288,79 @@ def _public_answer(raw: dict[str, Any]) -> Answer:
     return NoulAnswer(noul=float(raw["noul"]))
 
 
-def build_engine(kind: str, device: str | None, preload: bool) -> DecisionEngine:
+class LevEngine(DecisionEngine):
+    """Lev 350M (LFM2.5) served in-process. Weights default to franckverrot/lev-350m."""
+
+    blocking_startup = False
+
+    def __init__(self, run: str, device: str | None) -> None:
+        self.run = run or "franckverrot/lev-350m"
+        self.device = device or None
+        self._lock = threading.Lock()
+        self._tok = None
+        self._model = None
+        self._temperature = 1.0
+
+    async def startup(self) -> None:
+        import asyncio
+
+        await asyncio.to_thread(self._load)
+
+    def _load(self) -> None:
+        try:
+            import torch
+            from lev.evaluate import load, resolve_run
+            from lev.serve import load_temperature
+        except ImportError as exc:
+            raise RuntimeError(
+                "The lev runtime requires the lev package. Install with: pip install 'laya-api[lev]'"
+            ) from exc
+        run = resolve_run(self.run)
+        if self.device:
+            dev = self.device
+        elif torch.cuda.is_available():
+            dev = "cuda"
+        else:
+            dev = "cpu"
+        logger.info("Loading Lev checkpoint %s on %s", self.run, dev)
+        self._tok, self._model = load(run, dev)
+        self._temperature, source = load_temperature(run)
+        logger.info("Lev ready temperature=%.3f (%s)", self._temperature, source)
+
+    async def predict(self, state: Any, questions: dict[str, Any], card: ModelCard) -> SystemOneResponse:
+        import asyncio
+
+        if self._model is None:
+            raise RuntimeError("Lev engine is not started")
+        raw_questions = {qid: (q if isinstance(q, dict) else q.model_dump()) for qid, q in questions.items()}
+        return await asyncio.to_thread(self._predict_sync, state, raw_questions, card)
+
+    def _predict_sync(self, state: Any, questions: dict[str, Any], card: ModelCard) -> SystemOneResponse:
+        import torch
+        from lev.api import SystemOneRequest as LevRequest
+        from lev.api import output_tokens, to_answers, to_record
+
+        req = LevRequest.model_validate({"state": state, "model": card.name, "questions": questions})
+        record, meta = to_record(req)
+        with self._lock:
+            encoded = self._model.encode(self._tok, record, max_state=8192, max_branch=8192)
+            with torch.no_grad():
+                probs = [torch.softmax(z / self._temperature, -1).cpu().tolist() for z in self._model.forward(encoded)]
+        answers = {qid: _public_answer(raw) for qid, raw in to_answers(probs, meta).items()}
+        input_tokens = len(encoded["ids"])
+        return SystemOneResponse(
+            model=card.name,
+            answers=answers,
+            usage=Usage(input_tokens=input_tokens, output_tokens=output_tokens(self._tok, to_answers(probs, meta))),
+            routing=None,
+        )
+
+
+def build_engine(kind: str, device: str | None, preload: bool, *, lev_run: str = "franckverrot/lev-350m") -> DecisionEngine:
     if kind in {"stub", "heuristic", "fake"}:
         return StubEngine()
     if kind in {"laya", "real"}:
         return LayaEngine(device=device, preload=preload)
-    raise ValueError(f"unknown ENGINE {kind!r}; use 'stub' or 'laya'")
+    if kind == "lev":
+        return LevEngine(run=lev_run, device=device)
+    raise ValueError(f"unknown ENGINE {kind!r}; use 'stub', 'laya', or 'lev'")

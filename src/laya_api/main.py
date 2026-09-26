@@ -20,7 +20,7 @@ from laya_api.engine import build_engine
 from laya_api.rate_limit import RateLimiter
 from laya_api.routes.auth import build_oauth, router as auth_router
 from laya_api.routes.console import SignInRequired, router as console_router
-from laya_api.routes.v1 import router as v1_router
+from laya_api.routes.v1 import laya_router, lev_router, router as v1_router
 
 logger = logging.getLogger("laya_api")
 
@@ -34,13 +34,30 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI):
         init_engine(settings.database_url)
         await create_schema()
-        engine = build_engine(settings.engine, settings.laya_device, settings.laya_preload)
+        real = settings.real_runtimes()
+        engines = {
+            "laya": build_engine(
+                "laya" if "laya" in real else "stub",
+                settings.laya_device,
+                settings.laya_preload,
+            ),
+            "lev": build_engine(
+                "lev" if "lev" in real else "stub",
+                settings.laya_device,
+                settings.laya_preload,
+                lev_run=settings.lev_run,
+            ),
+        }
         context = AppContext(
             settings=settings,
             sessions=get_session_factory(),
-            engine=engine,
+            engine=engines["laya"],
             limiter=RateLimiter(settings.rate_limit_rpm),
         )
+        context.engines = engines
+        context.runtime_ready = {name: asyncio.Event() for name in engines}
+        context.runtime_error = {name: None for name in engines}
+        context.engine_ready = context.runtime_ready["laya"]
         app.state.ctx = context
         app.state.oauth = build_oauth(settings)
         if settings.secret_key == "dev-insecure-change-me":
@@ -48,26 +65,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if settings.allow_dev_login:
             logger.warning("ALLOW_DEV_LOGIN is enabled. Turn this off on any public host.")
 
-        load_task: asyncio.Task | None = None
+        load_tasks: list[asyncio.Task] = []
 
-        async def load_engine() -> None:
+        async def load_engine(name: str, engine) -> None:
             try:
-                logger.info("Starting decision engine (%s)", settings.engine)
+                logger.info("Starting %s engine", name)
                 await engine.startup()
-                context.engine_ready.set()
-                logger.info("Decision engine ready")
+                context.runtime_ready[name].set()
+                logger.info("%s engine ready", name)
             except Exception as exc:
-                context.engine_error = str(exc)
-                logger.exception("Decision engine failed to load")
+                context.runtime_error[name] = str(exc)
+                logger.exception("%s engine failed to load", name)
 
-        if engine.blocking_startup:
-            await load_engine()
-        else:
-            load_task = asyncio.create_task(load_engine())
+        for name, engine in engines.items():
+            if engine.blocking_startup:
+                await load_engine(name, engine)
+            else:
+                load_tasks.append(asyncio.create_task(load_engine(name, engine)))
 
         yield
-        if load_task is not None:
-            load_task.cancel()
+        for task in load_tasks:
+            task.cancel()
         await dispose_engine()
 
     app = FastAPI(
@@ -88,6 +106,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(auth_router)
     app.include_router(console_router)
     app.include_router(v1_router)
+    app.include_router(laya_router)
+    app.include_router(lev_router)
 
     @app.get("/up")
     @app.get("/healthz")

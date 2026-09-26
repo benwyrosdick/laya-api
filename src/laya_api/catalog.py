@@ -12,6 +12,7 @@ class ModelCard:
     release_date: str
     checkpoint: str | None
     listed: bool = True
+    runtime: str = "laya"
 
 
 # checkpoint=None means the hosted Router picks english vs multilingual vs typed-decisions.
@@ -42,6 +43,23 @@ MODELS: dict[str, ModelCard] = {
     ),
 }
 
+LEV_MODELS: dict[str, ModelCard] = {
+    "lev-latest": ModelCard(
+        name="lev-latest",
+        description="Lev 350M on LiquidAI LFM2.5-350M. One forward pass, TypeSafe-shaped answers. Alias: jev-latest.",
+        release_date="2026-09-22",
+        checkpoint=None,
+        runtime="lev",
+    ),
+}
+
+_LEV_ALIASES = {
+    "lev": "lev-latest",
+    "latest": "lev-latest",
+    "jev": "lev-latest",
+    "jev-latest": "lev-latest",
+}
+
 _ALIASES = {
     "router": "laya-latest",
     "laya-router": "laya-latest",
@@ -68,17 +86,23 @@ class UnknownModelError(ValueError):
     pass
 
 
-def resolve_model(name: str) -> ModelCard:
+def resolve_model(name: str, runtime: str = "laya") -> ModelCard:
     key = (name or "").strip()
     if not key:
         raise UnknownModelError("model is required")
-    canonical = _ALIASES.get(key.lower(), key)
-    card = MODELS.get(canonical) or MODELS.get(canonical.lower())
-    if card is None:
+    if runtime == "lev":
+        canonical = _LEV_ALIASES.get(key.lower(), key)
+        card = LEV_MODELS.get(canonical) or LEV_MODELS.get(canonical.lower())
+        known = ", ".join(LEV_MODELS)
+    else:
+        canonical = _ALIASES.get(key.lower(), key)
+        card = MODELS.get(canonical) or MODELS.get(canonical.lower())
         known = ", ".join(MODELS)
+    if card is None:
         raise UnknownModelError(f"unknown model {name!r}; choose one of: {known}")
     return card
 
 
-def listed_models() -> list[ModelCard]:
-    return [card for card in MODELS.values() if card.listed]
+def listed_models(runtime: str = "laya") -> list[ModelCard]:
+    catalog = LEV_MODELS if runtime == "lev" else MODELS
+    return [card for card in catalog.values() if card.listed]
