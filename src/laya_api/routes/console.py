@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 
 from laya_api import __version__
 from laya_api.app_state import ctx
@@ -155,6 +155,8 @@ async def usage_page(request: Request):
     if grain not in {"hour", "day"}:
         grain = "hour"
     key_filter = (request.query_params.get("key") or "").strip()
+    model_filter = (request.query_params.get("model") or "").strip()
+    catalog = [card.name for card in listed_models("laya")] + [card.name for card in listed_models("lev")]
     async with ctx(request).sessions() as session:
         keys_result = await session.execute(
             select(ApiKey).where(ApiKey.user_id == user.id).order_by(ApiKey.created_at.desc())
@@ -163,11 +165,25 @@ async def usage_page(request: Request):
         known_ids = {key.id for key in keys}
         if key_filter and key_filter != "playground" and key_filter not in known_ids:
             key_filter = ""
+        seen = await session.execute(
+            select(UsageEvent.requested_model, UsageEvent.resolved_model).where(UsageEvent.user_id == user.id)
+        )
+        model_names = list(catalog)
+        for requested, resolved in seen.all():
+            for name in (requested, resolved):
+                if name and name not in model_names:
+                    model_names.append(name)
+        if model_filter and model_filter not in model_names:
+            model_filter = ""
         stmt = select(UsageEvent.created_at, UsageEvent.input_tokens).where(UsageEvent.user_id == user.id)
         if key_filter == "playground":
             stmt = stmt.where(UsageEvent.api_key_id.is_(None))
         elif key_filter:
             stmt = stmt.where(UsageEvent.api_key_id == key_filter)
+        if model_filter:
+            stmt = stmt.where(
+                or_(UsageEvent.requested_model == model_filter, UsageEvent.resolved_model == model_filter)
+            )
         result = await session.execute(stmt)
         events = [(row[0], row[1]) for row in result.all()]
     buckets = build_series(events, grain=grain)
@@ -188,8 +204,10 @@ async def usage_page(request: Request):
         "usage.html",
         user=user,
         keys=keys,
+        model_names=model_names,
         grain=grain,
         key_filter=key_filter,
+        model_filter=model_filter,
         window=window,
         buckets=buckets,
         labels=chart_labels(buckets, grain=grain),

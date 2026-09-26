@@ -126,6 +126,14 @@ def test_usage_filters_by_key_and_grain(signed_in: TestClient):
     assert "30 days" in only.text
     assert "50" in only.text
     assert "950" not in only.text
+    by_model = signed_in.get("/usage?model=laya")
+    assert by_model.status_code == 200
+    assert "All models" in by_model.text
+    assert "950" in by_model.text
+    other = signed_in.get("/usage?model=lev-latest")
+    assert other.status_code == 200
+    assert "950" not in other.text
+    assert ">0<" in other.text or ">0</strong>" in other.text
 
 
 def test_usage_requires_login(client: TestClient):

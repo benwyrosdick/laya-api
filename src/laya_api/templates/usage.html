@@ -8,9 +8,18 @@
   </div>
   <form class="usage-filters" method="get" action="/usage">
     <div class="usage-toggle" role="group" aria-label="Chart grain">
-      <a class="{% if grain == 'hour' %}on{% endif %}" href="/usage?grain=hour&key={{ key_filter }}">Hourly</a>
-      <a class="{% if grain == 'day' %}on{% endif %}" href="/usage?grain=day&key={{ key_filter }}">Daily</a>
+      <a class="{% if grain == 'hour' %}on{% endif %}" href="/usage?grain=hour&key={{ key_filter }}&model={{ model_filter }}">Hourly</a>
+      <a class="{% if grain == 'day' %}on{% endif %}" href="/usage?grain=day&key={{ key_filter }}&model={{ model_filter }}">Daily</a>
     </div>
+    <label>
+      Model
+      <select name="model" onchange="this.form.submit()">
+        <option value="" {% if not model_filter %}selected{% endif %}>All models</option>
+        {% for name in model_names %}
+          <option value="{{ name }}" {% if model_filter == name %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </label>
     <label>
       Key
       <select name="key" onchange="this.form.submit()">
