@@ -75,7 +75,7 @@ class StubEngine(DecisionEngine):
 
     async def predict(self, state: Any, questions: dict[str, Any], card: ModelCard) -> SystemOneResponse:
         text = flatten_state(state)
-        if card.runtime == "lev":
+        if card.runtime in {"lev", "kev"}:
             answers = {qid: self._answer(text, q if isinstance(q, dict) else q.model_dump()) for qid, q in questions.items()}
             return SystemOneResponse(
                 model=card.name,
@@ -356,11 +356,92 @@ class LevEngine(DecisionEngine):
         )
 
 
-def build_engine(kind: str, device: str | None, preload: bool, *, lev_run: str = "franckverrot/lev-350m") -> DecisionEngine:
+class KevEngine(DecisionEngine):
+    """Kev (Qwen pointer head) served in-process. Weights default to jaredpalmer/kev-0.8b."""
+
+    blocking_startup = False
+
+    def __init__(self, run: str, device: str | None) -> None:
+        self.run = run or "jaredpalmer/kev-0.8b"
+        self.device = device or None
+        self._lock = threading.Lock()
+        self._tok = None
+        self._model = None
+
+    async def startup(self) -> None:
+        import asyncio
+
+        await asyncio.to_thread(self._load)
+
+    def _load(self) -> None:
+        try:
+            import torch
+            from dataclasses import replace
+
+            from kev.checkpoint import Checkpoint, LoadOptions
+        except ImportError as exc:
+            raise RuntimeError(
+                "The kev runtime requires the kev package. Install with: pip install 'laya-api[kev]'"
+            ) from exc
+        if self.device:
+            dev = self.device
+        elif torch.cuda.is_available():
+            dev = "cuda"
+        else:
+            dev = "cpu"
+        opts = LoadOptions()
+        if dev == "cuda":
+            opts = replace(opts, dtype=torch.bfloat16, backend="torch")
+        logger.info("Loading Kev checkpoint %s on %s", self.run, dev)
+        checkpoint = Checkpoint(self.run)
+        self._tok, self._model = checkpoint.load(dev, opts)
+        logger.info("Kev ready (%s)", checkpoint.requested)
+
+    async def predict(self, state: Any, questions: dict[str, Any], card: ModelCard) -> SystemOneResponse:
+        import asyncio
+
+        if self._model is None:
+            raise RuntimeError("Kev engine is not started")
+        raw_questions = {qid: (q if isinstance(q, dict) else q.model_dump()) for qid, q in questions.items()}
+        return await asyncio.to_thread(self._predict_sync, state, raw_questions, card)
+
+    def _predict_sync(self, state: Any, questions: dict[str, Any], card: ModelCard) -> SystemOneResponse:
+        from kev.api import SystemOneRequest as KevRequest
+        from kev.api import output_tokens, to_answers, to_record
+        from kev.model import SERVE_MAX_BRANCH, SERVE_MAX_STATE
+
+        req = KevRequest.model_validate({"state": state, "model": card.name, "questions": questions})
+        record, meta = to_record(req)
+        with self._lock:
+            encoded = self._model.encode(self._tok, record, max_state=SERVE_MAX_STATE, max_branch=SERVE_MAX_BRANCH)
+            probs = [[float(x) for x in row] for row in self._model.probs(encoded)]
+        raw_answers = to_answers(probs, meta)
+        answers = {qid: _public_answer(raw) for qid, raw in raw_answers.items()}
+        return SystemOneResponse(
+            model=card.name,
+            answers=answers,
+            usage=Usage(
+                input_tokens=len(encoded["ids"]),
+                output_tokens=output_tokens(self._tok, raw_answers),
+            ),
+            routing=None,
+        )
+
+
+def build_engine(
+    kind: str,
+    device: str | None,
+    preload: bool,
+    *,
+    lev_run: str = "franckverrot/lev-350m",
+    kev_run: str = "jaredpalmer/kev-0.8b",
+) -> DecisionEngine:
     if kind in {"stub", "heuristic", "fake"}:
         return StubEngine()
     if kind in {"laya", "real"}:
         return LayaEngine(device=device, preload=preload)
     if kind == "lev":
         return LevEngine(run=lev_run, device=device)
-    raise ValueError(f"unknown ENGINE {kind!r}; use 'stub', 'laya', or 'lev'")
+    if kind == "kev":
+        return KevEngine(run=kev_run, device=device)
+    raise ValueError(f"unknown ENGINE {kind!r}; use 'stub', 'laya', 'lev', or 'kev'")

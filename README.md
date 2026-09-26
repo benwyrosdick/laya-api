@@ -75,15 +75,15 @@ The answer objects follow Jev: `choice` includes `probabilities` and `confidence
 
 ### Runtimes
 
-Laya and [Lev](https://github.com/franckverrot/lev) are separate engines, so they have separate paths. `/v1/...` stays the Laya alias.
+Laya, [Lev](https://github.com/franckverrot/lev), and [Kev](https://github.com/jaredpalmer/kev) are separate engines, so they have separate paths. `/v1/...` stays the Laya alias.
 
-| | Laya | Lev |
-| --- | --- | --- |
-| Evaluate | `POST /laya/v1/systemone` or `POST /v1/systemone` | `POST /lev/v1/systemone` |
-| Models | `GET /laya/v1/models` | `GET /lev/v1/models` |
-| Default model | `laya-latest` | `lev-latest` |
+| | Laya | Lev | Kev |
+| --- | --- | --- | --- |
+| Evaluate | `POST /laya/v1/systemone` or `POST /v1/systemone` | `POST /lev/v1/systemone` | `POST /kev/v1/systemone` |
+| Models | `GET /laya/v1/models` | `GET /lev/v1/models` | `GET /kev/v1/models` |
+| Default model | `laya-latest` | `lev-latest` | `kev-latest` |
 
-Lev is the LFM2.5-350M decision model (`franckverrot/lev-350m`). Same question types. It does not return a `routing` object. Load it with `ENGINES=laya,lev` (or `ENGINE=lev`) and `pip install -e '.[lev]'`. Production Kamal stays Laya-only unless you set that.
+Lev is the LFM2.5-350M decision model (`franckverrot/lev-350m`). Kev is Jared Palmer's Qwen decision family; `KEV_RUN` defaults to `jaredpalmer/kev-0.8b` so it fits a 16 GB GPU. Same question types. Neither returns a `routing` object. Load them with `ENGINES=laya,lev,kev` and `pip install -e '.[lev,kev]'`. Production Kamal stays Laya-only unless you set that.
 
 ## Real Laya engine
 

@@ -60,6 +60,25 @@ _LEV_ALIASES = {
     "jev-latest": "lev-latest",
 }
 
+KEV_MODELS: dict[str, ModelCard] = {
+    "kev-latest": ModelCard(
+        name="kev-latest",
+        description="Kev on Qwen (default checkpoint jaredpalmer/kev-0.8b). Same question types as Jev. Set KEV_RUN to load 4b, 9b, or 27b.",
+        release_date="2026-09-24",
+        checkpoint=None,
+        runtime="kev",
+    ),
+}
+
+_KEV_ALIASES = {
+    "kev": "kev-latest",
+    "latest": "kev-latest",
+    "kev-0.8b": "kev-latest",
+    "kev-4b": "kev-latest",
+    "kev-9b": "kev-latest",
+    "kev-27b": "kev-latest",
+}
+
 _ALIASES = {
     "router": "laya-latest",
     "laya-router": "laya-latest",
@@ -90,19 +109,17 @@ def resolve_model(name: str, runtime: str = "laya") -> ModelCard:
     key = (name or "").strip()
     if not key:
         raise UnknownModelError("model is required")
-    if runtime == "lev":
-        canonical = _LEV_ALIASES.get(key.lower(), key)
-        card = LEV_MODELS.get(canonical) or LEV_MODELS.get(canonical.lower())
-        known = ", ".join(LEV_MODELS)
-    else:
-        canonical = _ALIASES.get(key.lower(), key)
-        card = MODELS.get(canonical) or MODELS.get(canonical.lower())
-        known = ", ".join(MODELS)
+    catalogs = {"laya": (MODELS, _ALIASES), "lev": (LEV_MODELS, _LEV_ALIASES), "kev": (KEV_MODELS, _KEV_ALIASES)}
+    models, aliases = catalogs.get(runtime, catalogs["laya"])
+    canonical = aliases.get(key.lower(), key)
+    card = models.get(canonical) or models.get(canonical.lower())
+    known = ", ".join(models)
     if card is None:
         raise UnknownModelError(f"unknown model {name!r}; choose one of: {known}")
     return card
 
 
 def listed_models(runtime: str = "laya") -> list[ModelCard]:
-    catalog = LEV_MODELS if runtime == "lev" else MODELS
+    catalogs = {"laya": MODELS, "lev": LEV_MODELS, "kev": KEV_MODELS}
+    catalog = catalogs.get(runtime, MODELS)
     return [card for card in catalog.values() if card.listed]

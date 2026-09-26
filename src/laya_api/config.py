@@ -16,10 +16,11 @@ class Settings(BaseSettings):
     allow_dev_login: bool = False
 
     engine: str = "stub"
-    # Comma-separated real runtimes to load: "laya", "lev", or "laya,lev".
+    # Comma-separated real runtimes to load: "laya", "lev", "kev", or "laya,lev,kev".
     # Empty follows `engine`. "stub" loads neither.
     engines: str = ""
     lev_run: str = "franckverrot/lev-350m"
+    kev_run: str = "jaredpalmer/kev-0.8b"
     laya_device: str | None = None
     laya_preload: bool = True
     default_model: str = "laya-latest"
@@ -49,10 +50,10 @@ class Settings(BaseSettings):
             if self.engine in {"stub", "heuristic", "fake"}:
                 return set()
             if self.engine in {"both", "all"}:
-                return {"laya", "lev"}
+                return {"laya", "lev", "kev"}
             return {self.engine.strip().lower()}
         if raw in {"stub", "none"}:
             return set()
         if raw in {"both", "all"}:
-            return {"laya", "lev"}
+            return {"laya", "lev", "kev"}
         return {part.strip() for part in raw.split(",") if part.strip()}

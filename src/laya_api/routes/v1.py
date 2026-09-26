@@ -15,9 +15,10 @@ from laya_api.security import extract_bearer, hash_api_key
 
 def _requested_model(body: SystemOneRequest, runtime: str) -> str:
     name = (body.model or "").strip()
-    if runtime == "lev" and name in {"", "laya-latest"}:
-        return "lev-latest"
-    return name or "laya-latest"
+    defaults = {"laya": "laya-latest", "lev": "lev-latest", "kev": "kev-latest"}
+    if name in {"", "laya-latest"}:
+        return defaults.get(runtime, "laya-latest")
+    return name
 
 
 def _unauthorized() -> HTTPException:
@@ -209,3 +210,4 @@ def build_runtime_router(prefix: str, runtime: str) -> APIRouter:
 router = build_runtime_router("/v1", "laya")
 laya_router = build_runtime_router("/laya/v1", "laya")
 lev_router = build_runtime_router("/lev/v1", "lev")
+kev_router = build_runtime_router("/kev/v1", "kev")

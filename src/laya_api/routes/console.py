@@ -10,7 +10,7 @@ from sqlalchemy import func, or_, select
 
 from laya_api import __version__
 from laya_api.app_state import ctx
-from laya_api.catalog import listed_models, resolve_model, UnknownModelError
+from laya_api.catalog import listed_models
 from laya_api.models import ApiKey, UsageEvent, User
 from laya_api.routes.v1 import run_system_one
 from laya_api.schemas import SystemOneRequest
@@ -156,7 +156,11 @@ async def usage_page(request: Request):
         grain = "hour"
     key_filter = (request.query_params.get("key") or "").strip()
     model_filter = (request.query_params.get("model") or "").strip()
-    catalog = [card.name for card in listed_models("laya")] + [card.name for card in listed_models("lev")]
+    catalog = (
+        [card.name for card in listed_models("laya")]
+        + [card.name for card in listed_models("lev")]
+        + [card.name for card in listed_models("kev")]
+    )
     async with ctx(request).sessions() as session:
         keys_result = await session.execute(
             select(ApiKey).where(ApiKey.user_id == user.id).order_by(ApiKey.created_at.desc())
@@ -227,6 +231,7 @@ async def playground(request: Request):
         user=user,
         models=listed_models("laya"),
         lev_models=listed_models("lev"),
+        kev_models=listed_models("kev"),
         sample_state=SAMPLE_STATE,
         sample_questions=SAMPLE_QUESTIONS,
     )
@@ -236,11 +241,11 @@ async def playground(request: Request):
 async def console_evaluate(request: Request, body: SystemOneRequest):
     user = await require_user(request, json_api=True)
     runtime = "laya"
-    try:
-        resolve_model(body.model or "", "lev")
+    model_name = (body.model or "").lower()
+    if model_name.startswith("kev"):
+        runtime = "kev"
+    elif model_name.startswith("lev") or model_name in {"jev", "jev-latest"}:
         runtime = "lev"
-    except UnknownModelError:
-        runtime = "laya"
     return await run_system_one(
         request,
         body,
