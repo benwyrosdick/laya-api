@@ -5,7 +5,7 @@ Hosted System One API for [Laya](https://github.com/NandhaKishorM/laya), in the 
 Sign in with Google, mint an API key, then evaluate `state` against typed `choice` / `score` / `noul` questions.
 
 ```http
-POST /v1/systemone
+POST /laya/v1/systemone
 Authorization: Bearer <LAYA_API_KEY>
 ```
 
@@ -34,7 +34,7 @@ Accounts are stored in Postgres (`users`). API secrets are stored as SHA-256 has
 ```bash
 export LAYA_API_KEY="laya_…"
 
-curl -s http://localhost:8000/v1/systemone \
+curl -s http://localhost:8000/laya/v1/systemone \
   -H "Authorization: Bearer $LAYA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -58,7 +58,7 @@ curl -s http://localhost:8000/v1/systemone \
   }'
 ```
 
-List models with `GET /v1/models` and the same bearer token. Interactive OpenAPI is at `/docs`. The signed-in [playground](http://localhost:8000/playground) hits the same engine without a key.
+List models with `GET /laya/v1/models` and the same bearer token. Interactive OpenAPI is at `/docs`. The signed-in [playground](http://localhost:8000/playground) hits the same engine without a key.
 
 ### Models
 
@@ -75,11 +75,11 @@ The answer objects follow Jev: `choice` includes `probabilities` and `confidence
 
 ### Runtimes
 
-Laya, [Lev](https://github.com/franckverrot/lev), and [Kev](https://github.com/jaredpalmer/kev) are separate engines, so they have separate paths. `/v1/...` stays the Laya alias.
+Laya, [Lev](https://github.com/franckverrot/lev), and [Kev](https://github.com/jaredpalmer/kev) are separate engines, so every call names the runtime. There is no un-namespaced `/v1/systemone`.
 
 | | Laya | Lev | Kev |
 | --- | --- | --- | --- |
-| Evaluate | `POST /laya/v1/systemone` or `POST /v1/systemone` | `POST /lev/v1/systemone` | `POST /kev/v1/systemone` |
+| Evaluate | `POST /laya/v1/systemone` | `POST /lev/v1/systemone` | `POST /kev/v1/systemone` |
 | Models | `GET /laya/v1/models` | `GET /lev/v1/models` | `GET /kev/v1/models` |
 | Default model | `laya-latest` | `lev-latest` | `kev-latest` |
 
@@ -131,7 +131,7 @@ pytest
 
 Production is deployed by GitHub Actions with Kamal to `house.wyrosdick.com`. Images go to GHCR as `ghcr.io/benwyrosdick/laya-api` and include the real Laya checkpoints (the first build is slow and the image is large). The app uses a Postgres instance you already host; there is no database accessory.
 
-A push to `main` deploys. The first time, run the **Deploy** workflow with **setup** checked (Actions → Deploy → Run workflow) so Kamal can install Docker, boot `kamal-proxy`, and ship the app. `/up` becomes healthy as soon as the process and database are up so Kamal can finish. Checkpoints then load in the background (several minutes on CPU). `/ready` is 503 until they are resident; `POST /v1/systemone` returns 529 until then. `docker logs -f` on the `laya-api-web-*` container shows load progress.
+A push to `main` deploys. The first time, run the **Deploy** workflow with **setup** checked (Actions → Deploy → Run workflow) so Kamal can install Docker, boot `kamal-proxy`, and ship the app. `/up` becomes healthy as soon as the process and database are up so Kamal can finish. Checkpoints then load in the background (several minutes on CPU). `/ready` is 503 until they are resident; `POST /laya/v1/systemone` returns 529 until then. `docker logs -f` on the `laya-api-web-*` container shows load progress.
 
 ### GitHub Actions values
 

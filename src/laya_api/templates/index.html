@@ -38,16 +38,16 @@
   </article>
   <article>
     <h2>3. Query the engine</h2>
-    <p><code>POST /v1/systemone</code> evaluates every question in one pass. Default model <code>laya-latest</code> routes to the right checkpoint.</p>
+    <p><code>POST /laya/v1/systemone</code> evaluates every question in one pass. Default model <code>laya-latest</code> routes to the right checkpoint.</p>
   </article>
 </section>
 
 <section class="codeblock">
   <header>
     <span>Example</span>
-    <span class="muted">POST /v1/systemone</span>
+    <span class="muted">POST /laya/v1/systemone</span>
   </header>
-<pre>curl -s $PUBLIC_BASE_URL/v1/systemone \
+<pre>curl -s $PUBLIC_BASE_URL/laya/v1/systemone \
   -H "Authorization: Bearer $LAYA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{

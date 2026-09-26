@@ -207,7 +207,6 @@ def build_runtime_router(prefix: str, runtime: str) -> APIRouter:
     return router
 
 
-router = build_runtime_router("/v1", "laya")
 laya_router = build_runtime_router("/laya/v1", "laya")
 lev_router = build_runtime_router("/lev/v1", "lev")
 kev_router = build_runtime_router("/kev/v1", "kev")

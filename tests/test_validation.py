@@ -6,7 +6,7 @@ from tests.helpers import create_key
 def test_unknown_model(signed_in: TestClient):
     raw = create_key(signed_in)
     response = signed_in.post(
-        "/v1/systemone",
+        "/laya/v1/systemone",
         headers={"Authorization": f"Bearer {raw}"},
         json={
             "state": "hello",
@@ -21,7 +21,7 @@ def test_unknown_model(signed_in: TestClient):
 def test_choice_requires_criteria(signed_in: TestClient):
     raw = create_key(signed_in)
     response = signed_in.post(
-        "/v1/systemone",
+        "/laya/v1/systemone",
         headers={"Authorization": f"Bearer {raw}"},
         json={
             "state": "hello",
@@ -34,7 +34,7 @@ def test_choice_requires_criteria(signed_in: TestClient):
 def test_score_needs_two_levels(signed_in: TestClient):
     raw = create_key(signed_in)
     response = signed_in.post(
-        "/v1/systemone",
+        "/laya/v1/systemone",
         headers={"Authorization": f"Bearer {raw}"},
         json={
             "state": "hello",
@@ -49,7 +49,7 @@ def test_score_needs_two_levels(signed_in: TestClient):
 def test_empty_questions_rejected(signed_in: TestClient):
     raw = create_key(signed_in)
     response = signed_in.post(
-        "/v1/systemone",
+        "/laya/v1/systemone",
         headers={"Authorization": f"Bearer {raw}"},
         json={"state": "hello", "questions": {}},
     )

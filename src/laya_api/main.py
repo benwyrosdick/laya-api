@@ -20,7 +20,7 @@ from laya_api.engine import build_engine
 from laya_api.rate_limit import RateLimiter
 from laya_api.routes.auth import build_oauth, router as auth_router
 from laya_api.routes.console import SignInRequired, router as console_router
-from laya_api.routes.v1 import kev_router, laya_router, lev_router, router as v1_router
+from laya_api.routes.v1 import kev_router, laya_router, lev_router
 
 logger = logging.getLogger("laya_api")
 
@@ -111,7 +111,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
     app.include_router(auth_router)
     app.include_router(console_router)
-    app.include_router(v1_router)
     app.include_router(laya_router)
     app.include_router(lev_router)
     app.include_router(kev_router)

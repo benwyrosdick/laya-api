@@ -17,7 +17,7 @@ async def _latest_key() -> ApiKey:
 
 def test_create_and_use_key(signed_in: TestClient):
     raw = create_key(signed_in)
-    response = signed_in.get("/v1/models", headers={"Authorization": f"Bearer {raw}"})
+    response = signed_in.get("/laya/v1/models", headers={"Authorization": f"Bearer {raw}"})
     assert response.status_code == 200
     names = [m["name"] for m in response.json()["models"]]
     assert "laya-latest" in names
@@ -40,14 +40,14 @@ def test_revoked_key_is_rejected(signed_in: TestClient):
     revoked = signed_in.post(f"/keys/{key.id}/revoke", follow_redirects=True)
     assert revoked.status_code == 200
     assert "Revoked" in revoked.text
-    denied = signed_in.get("/v1/models", headers={"Authorization": f"Bearer {raw}"})
+    denied = signed_in.get("/laya/v1/models", headers={"Authorization": f"Bearer {raw}"})
     assert denied.status_code == 401
     assert denied.json()["error"] == "unauthorized"
 
 
 def test_missing_bearer_is_401(client: TestClient):
     response = client.post(
-        "/v1/systemone",
+        "/laya/v1/systemone",
         json={"state": "hello", "questions": {"ok": {"type": "noul", "instructions": "Is this a greeting?"}}},
     )
     assert response.status_code == 401

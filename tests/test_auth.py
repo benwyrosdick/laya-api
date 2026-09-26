@@ -8,7 +8,7 @@ def test_landing_renders(client: TestClient):
     response = client.get("/")
     assert response.status_code == 200
     assert "Sign in" in response.text or "Dev sign in" in response.text
-    assert "/v1/systemone" in response.text
+    assert "/laya/v1/systemone" in response.text
 
 
 def test_keys_requires_login(client: TestClient):

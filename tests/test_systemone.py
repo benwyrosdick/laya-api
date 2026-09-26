@@ -32,7 +32,7 @@ QUESTIONS = {
 def test_systemone_with_api_key(signed_in: TestClient):
     raw = create_key(signed_in)
     response = signed_in.post(
-        "/v1/systemone",
+        "/laya/v1/systemone",
         headers={"Authorization": f"Bearer {raw}"},
         json={"state": TICKET, "model": "laya-latest", "questions": QUESTIONS},
     )
@@ -65,7 +65,7 @@ def test_playground_evaluate(signed_in: TestClient):
 def test_explicit_model_alias(signed_in: TestClient):
     raw = create_key(signed_in)
     response = signed_in.post(
-        "/v1/systemone",
+        "/laya/v1/systemone",
         headers={"Authorization": f"Bearer {raw}"},
         json={
             "state": "hello",
@@ -86,9 +86,9 @@ def test_rate_limit(signed_in: TestClient, app):
         "questions": {"ok": {"type": "noul", "instructions": "Is this a greeting?"}},
     }
     headers = {"Authorization": f"Bearer {raw}"}
-    assert signed_in.post("/v1/systemone", headers=headers, json=payload).status_code == 200
-    assert signed_in.post("/v1/systemone", headers=headers, json=payload).status_code == 200
-    limited = signed_in.post("/v1/systemone", headers=headers, json=payload)
+    assert signed_in.post("/laya/v1/systemone", headers=headers, json=payload).status_code == 200
+    assert signed_in.post("/laya/v1/systemone", headers=headers, json=payload).status_code == 200
+    limited = signed_in.post("/laya/v1/systemone", headers=headers, json=payload)
     assert limited.status_code == 429
     assert limited.json()["error"] == "rate_limited"
     assert "Retry-After" in limited.headers

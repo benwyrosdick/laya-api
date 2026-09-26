@@ -35,6 +35,16 @@ def test_lev_models(signed_in: TestClient):
     assert names == ["lev-latest"]
 
 
+def test_unnamespaced_systemone_is_gone(signed_in: TestClient):
+    raw = create_key(signed_in)
+    response = signed_in.post(
+        "/v1/systemone",
+        headers={"Authorization": f"Bearer {raw}"},
+        json={"state": "hi", "questions": {"ok": {"type": "noul", "instructions": "yes?"}}},
+    )
+    assert response.status_code == 404
+
+
 def test_laya_alias_still_routes(signed_in: TestClient):
     raw = create_key(signed_in)
     response = signed_in.post(
