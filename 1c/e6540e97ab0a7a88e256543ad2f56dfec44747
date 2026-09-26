@@ -1,0 +1,19 @@
+tests/test_lev.py
+  s_99b0b4799b100f::t_b5999c75207d35 1-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1ce6540e97ab0a7a88e256543ad2f56dfec44747",
+  "prompts": {},
+  "sessions": {
+    "s_99b0b4799b100f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a0c1b3-e486-7a51-9a1f-791a79b7eb15",
+        "model": "unknown"
+      },
+      "human_author": "Ben Wyrosdick <ben.wyrosdick@gmail.com>"
+    }
+  }
+}
